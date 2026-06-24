@@ -7,6 +7,7 @@
 
 import pandas as pd
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -18,7 +19,7 @@ print("=" * 60)
 print("LOADING DATASET")
 print("=" * 60)
 
-df = pd.read_csv("HomeC_cleaned.csv")
+df = pd.read_csv(os.path.join(os.path.dirname(__file__), "..", "data", "HomeC_cleaned.csv"))
 print(df.columns.tolist())
 print("Dataset Loaded Successfully")
 print()
