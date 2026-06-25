@@ -1,0 +1,6 @@
+Model,F1,AUC,Precision,Recall
+XGBoost,0.903,0.998,0.8984,0.9076
+RandomForest,0.9002,0.9984,0.8929,0.9076
+LightGBM,0.8764,0.9975,0.8454,0.9097
+LogisticRegression,0.3702,0.9648,0.2318,0.9199
+IsolationForest,0.0795,0.7267,0.0771,0.0821
