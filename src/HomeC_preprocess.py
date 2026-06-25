@@ -23,6 +23,17 @@ df = pd.read_csv(os.path.join(os.path.dirname(__file__), "..", "data", "HomeC_cl
 print(df.columns.tolist())
 print("Dataset Loaded Successfully")
 print()
+# ==========================================================
+# CREATE VISUALIZATION FOLDER
+# ==========================================================
+
+os.makedirs("visualization", exist_ok=True)
+
+print("Visualization folder ready.")
+
+print(df.columns.tolist())
+print("Dataset Loaded Successfully")
+print()
 
 # ==========================================================
 # DATASET OVERVIEW
@@ -280,9 +291,16 @@ plt.plot(
 plt.title("Household Energy Consumption Over Time")
 plt.xlabel("Time")
 plt.ylabel("Energy Consumption (kW)")
-plt.tight_layout()
-plt.show()
 
+plt.tight_layout()
+
+plt.savefig(
+    "visualization/chart1_timeseries.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
+plt.show()
 print("""
 ============================================================
 CHART 1 REPORT
@@ -325,6 +343,13 @@ plt.xlabel("Energy Consumption (kW)")
 plt.ylabel("Frequency")
 
 plt.tight_layout()
+
+plt.savefig(
+    "visualization/chart2_histogram.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
 plt.show()
 
 print("""
@@ -362,6 +387,13 @@ sns.boxplot(
 plt.title("Boxplot of Energy Consumption")
 
 plt.tight_layout()
+
+plt.savefig(
+    "visualization/chart3_boxplot.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
 plt.show()
 
 print("""
@@ -427,6 +459,13 @@ sns.heatmap(
 plt.title("Correlation Heatmap")
 
 plt.tight_layout()
+
+plt.savefig(
+    "visualization/chart4_heatmap.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+
 plt.show()
 
 print("""
