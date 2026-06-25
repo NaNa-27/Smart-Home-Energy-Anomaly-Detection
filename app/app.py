@@ -19,6 +19,10 @@
 # ==========================================================
 
 import os
+
+from dotenv import load_dotenv
+load_dotenv()
+
 import dash
 from dash import dcc, html, Input, Output, State
 import pandas as pd
@@ -64,6 +68,14 @@ except FileNotFoundError:
     model_status = ("Chưa thấy best_model.pkl / feature_columns.pkl trong notebooks/ "
                     "— đang dùng dự đoán giả lập. Hãy chạy notebook để xuất artifact.")
 
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+# Debug khi khởi động: in trạng thái key (KHÔNG in toàn bộ key ra terminal)
+if GEMINI_API_KEY:
+    print(f"[AI] Đã nhận GEMINI_API_KEY (đuôi ...{GEMINI_API_KEY[-4:]}). Chế độ: Gemini thật.")
+else:
+    print("[AI] KHÔNG thấy GEMINI_API_KEY. Chế độ: fallback rule-based.")
+
 # ---------- 4. Tích hợp AI: HYBRID ----------
 # Đặt biến môi trường trước khi chạy:  export GEMINI_API_KEY="..."
 # KHÔNG ghi key cứng trong code (tránh lộ key khi đẩy lên GitHub).
@@ -96,7 +108,7 @@ def get_ai_explanation(prediction, temp_val, appliance_val):
     try:
         import requests
         url = ("https://generativelanguage.googleapis.com/v1beta/models/"
-               "gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY)
+               "gemini-2.5-flash-lite:generateContent?key=" + GEMINI_API_KEY)
         resp = requests.post(
             url,
             json={"contents": [{"parts": [{"text": prompt}]}]},
