@@ -1,3 +1,8 @@
+### Author: Nguyễn Xuân Bình - SE204049
+
+
+
+
 # SIMC_2026 — Anomaly Detection on Smart Home Energy Data
 
 Đồ án môn **DAP391m** (dự án backup). Phát hiện bất thường trong tiêu thụ điện
