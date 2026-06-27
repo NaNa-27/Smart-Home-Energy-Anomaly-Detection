@@ -3,7 +3,7 @@
 # 
 # Người tiền xử lý cho HomeC_cleaned_final.csv
 # và trực quan hóa, Nguyễn Xuân Bình tạo .gitignore cho file
-# (không tính phần của Bình vào đây)
+# HomeC_cleaned_final.csv (không tính phần của Bình vào đây)
 # ==========================================================
 
 
