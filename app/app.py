@@ -1,4 +1,20 @@
 # ==========================================================
+# Author: Nguyễn Xuân Bình - SE204049
+#         Lê Quốc Chung - SE19
+#
+# Lê Quốc Chung dựng khung app, sau đó Nguyễn Xuân Bình
+# chỉnh sửa lại
+# ==========================================================
+
+
+
+
+
+
+
+
+
+# ==========================================================
 # DAP391m - Smart Home Anomaly Detection Dashboard
 # Member C: Dashboard + App + Integrating AI Services
 #

@@ -1,4 +1,20 @@
 # ==========================================================
+# Author: Bùi Đoàn Quang Hưng - SE19
+# 
+# Người tiền xử lý cho HomeC_cleaned_final.csv
+# và trực quan hóa, Nguyễn Xuân Bình tạo .gitignore cho file
+# (không tính phần của Bình vào đây)
+# ==========================================================
+
+
+
+
+
+
+
+
+
+# ==========================================================
 # DAP391m PROJECT
 # DAY 1 COMPLETE
 # Member B
