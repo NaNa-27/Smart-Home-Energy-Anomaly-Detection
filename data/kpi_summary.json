@@ -1,0 +1,45 @@
+{
+  "total_energy_kwh": 7214.0,
+  "average_energy_kw": 0.859,
+  "peak_consumption_kw": 14.7146,
+  "peak_consumption_time": "2016-07-30 16:04:00",
+  "number_of_anomalies": 12418,
+  "anomaly_rate_pct": 2.46,
+  "anomaly_threshold_kw": 4.0336,
+  "total_solar_generation_kwh": 640.21,
+  "date_range_start": "2016-01-01 00:00:00",
+  "date_range_end": "2016-12-15 22:29:00",
+  "top5_appliances": {
+    "Furnace [kW]": 237834.92,
+    "Home office [kW]": 40961.28,
+    "Fridge [kW]": 32026.71,
+    "Barn [kW]": 29493.63,
+    "Wine cellar [kW]": 21233.08
+  },
+  "weather_correlation_use": {
+    "temperature": 0.009,
+    "humidity": 0.077,
+    "visibility": -0.002,
+    "apparentTemperature": -0.001,
+    "pressure": 0.036,
+    "windSpeed": -0.008,
+    "cloudCover": -0.078,
+    "windBearing": 0.019,
+    "precipIntensity": 0.077,
+    "dewPoint": 0.038,
+    "precipProbability": -0.02
+  },
+  "weather_correlation_gen": {
+    "temperature": 0.356,
+    "humidity": -0.079,
+    "visibility": 0.014,
+    "apparentTemperature": 0.355,
+    "pressure": 0.008,
+    "windSpeed": -0.145,
+    "cloudCover": -0.059,
+    "windBearing": -0.07,
+    "precipIntensity": 0.03,
+    "dewPoint": 0.287,
+    "precipProbability": 0.051
+  }
+}
