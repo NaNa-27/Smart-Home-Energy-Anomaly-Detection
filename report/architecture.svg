@@ -1,75 +1,184 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="620" viewBox="0 0 760 620" font-family="DejaVu Sans, Arial, sans-serif">
-  <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M1 1 L9 5 L1 9" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </marker>
-    <marker id="arrowd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M1 1 L9 5 L1 9" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </marker>
-  </defs>
-
-  <rect x="0" y="0" width="760" height="620" fill="white"/>
-
-  <!-- Node A: raw -->
-  <rect x="285" y="20" width="190" height="48" rx="8" fill="#ECEAE2" stroke="#5F5E5A" stroke-width="1"/>
-  <text x="380" y="49" text-anchor="middle" font-size="15" fill="#2C2C2A">HomeC.csv (thô)</text>
-
-  <!-- B -->
-  <rect x="265" y="100" width="230" height="56" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
-  <text x="380" y="124" text-anchor="middle" font-size="14" fill="#0C447C">Step 1-3: Tiền xử lý và EDA</text>
-  <text x="380" y="144" text-anchor="middle" font-size="13" fill="#185FA5">Member B</text>
-
-  <!-- C -->
-  <rect x="265" y="188" width="230" height="56" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
-  <text x="380" y="212" text-anchor="middle" font-size="14" fill="#0C447C">Step 4: Feature Engineering</text>
-  <text x="380" y="232" text-anchor="middle" font-size="13" fill="#185FA5">Member C</text>
-
-  <!-- D -->
-  <rect x="265" y="276" width="230" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
-  <text x="380" y="300" text-anchor="middle" font-size="14" fill="#26215C">Step 5-8: Train và Tune Model</text>
-  <text x="380" y="320" text-anchor="middle" font-size="13" fill="#534AB7">Member A</text>
-
-  <!-- E + F artifacts -->
-  <rect x="175" y="372" width="180" height="44" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
-  <text x="265" y="399" text-anchor="middle" font-size="14" fill="#04342C">best_model.pkl</text>
-
-  <rect x="405" y="372" width="180" height="44" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
-  <text x="495" y="399" text-anchor="middle" font-size="14" fill="#04342C">feature_columns.pkl</text>
-
-  <!-- Arrows main chain -->
-  <line x1="380" y1="68" x2="380" y2="98" stroke="#555" stroke-width="1.4" marker-end="url(#arrow)"/>
-  <line x1="380" y1="156" x2="380" y2="186" stroke="#555" stroke-width="1.4" marker-end="url(#arrow)"/>
-  <line x1="380" y1="244" x2="380" y2="274" stroke="#555" stroke-width="1.4" marker-end="url(#arrow)"/>
-  <line x1="340" y1="332" x2="280" y2="370" stroke="#555" stroke-width="1.4" marker-end="url(#arrow)"/>
-  <line x1="420" y1="332" x2="480" y2="370" stroke="#555" stroke-width="1.4" marker-end="url(#arrow)"/>
-
-  <!-- Subgraph: Dash app -->
-  <rect x="40" y="452" width="680" height="148" rx="14" fill="none" stroke="#993C1D" stroke-width="1.3" stroke-dasharray="6 4"/>
-  <text x="60" y="476" font-size="14" fill="#993C1D" font-weight="500">Ứng dụng Plotly Dash</text>
-
-  <!-- G UI -->
-  <rect x="60" y="492" width="170" height="86" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
-  <text x="145" y="528" text-anchor="middle" font-size="13" fill="#633806">Giao diện</text>
-  <text x="145" y="546" text-anchor="middle" font-size="13" fill="#633806">người dùng UI</text>
-
-  <!-- I model -->
-  <rect x="300" y="492" width="170" height="86" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
-  <text x="385" y="528" text-anchor="middle" font-size="13" fill="#633806">Model dự đoán</text>
-  <text x="385" y="546" text-anchor="middle" font-size="12" fill="#854F0B">Bất thường / Bình thường</text>
-
-  <!-- J AI -->
-  <rect x="540" y="492" width="160" height="86" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
-  <text x="620" y="528" text-anchor="middle" font-size="13" fill="#633806">Gọi API Trợ lý AI</text>
-  <text x="620" y="546" text-anchor="middle" font-size="12" fill="#854F0B">Phân tích và giải thích</text>
-
-  <!-- pkl dashed into model -->
-  <line x1="265" y1="416" x2="320" y2="490" stroke="#888" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#arrowd)"/>
-  <line x1="495" y1="416" x2="450" y2="490" stroke="#888" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#arrowd)"/>
-
-  <!-- UI -> model -->
-  <line x1="230" y1="525" x2="298" y2="525" stroke="#555" stroke-width="1.4" marker-end="url(#arrow)"/>
-  <!-- model -> AI -->
-  <line x1="470" y1="535" x2="538" y2="535" stroke="#555" stroke-width="1.4" marker-end="url(#arrow)"/>
-  <!-- AI back to UI (return) -->
-  <path d="M620 578 L620 592 L145 592 L145 580" fill="none" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.42.4 (0)
+ -->
+<!-- Title: G Pages: 1 -->
+<svg width="2121pt" height="191pt"
+ viewBox="0.00 0.00 2121.20 191.20" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(21.6 169.6)">
+<title>G</title>
+<polygon fill="white" stroke="transparent" points="-21.6,21.6 -21.6,-169.6 2099.6,-169.6 2099.6,21.6 -21.6,21.6"/>
+<!-- A -->
+<g id="node1" class="node">
+<title>A</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M132,-64C132,-64 12,-64 12,-64 6,-64 0,-58 0,-52 0,-52 0,-40 0,-40 0,-34 6,-28 12,-28 12,-28 132,-28 132,-28 138,-28 144,-34 144,-40 144,-40 144,-52 144,-52 144,-58 138,-64 132,-64"/>
+<text text-anchor="middle" x="72" y="-43.2" font-family="Arial" font-size="11.00">HomeC raw / cleaned ZIP</text>
+</g>
+<!-- B -->
+<g id="node2" class="node">
+<title>B</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M350,-64C350,-64 196,-64 196,-64 190,-64 184,-58 184,-52 184,-52 184,-40 184,-40 184,-34 190,-28 196,-28 196,-28 350,-28 350,-28 356,-28 362,-34 362,-40 362,-40 362,-52 362,-52 362,-58 356,-64 350,-64"/>
+<text text-anchor="middle" x="273" y="-49.2" font-family="Arial" font-size="11.00">Idempotent preprocessing</text>
+<text text-anchor="middle" x="273" y="-37.2" font-family="Arial" font-size="11.00">+ reconstructed 1&#45;minute timeline</text>
+</g>
+<!-- A&#45;&gt;B -->
+<g id="edge1" class="edge">
+<title>A&#45;&gt;B</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M144,-46C154.62,-46 165.72,-46 176.74,-46"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="176.97,-48.45 183.97,-46 176.97,-43.55 176.97,-48.45"/>
+</g>
+<!-- C -->
+<g id="node3" class="node">
+<title>C</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M520,-64C520,-64 414,-64 414,-64 408,-64 402,-58 402,-52 402,-52 402,-40 402,-40 402,-34 408,-28 414,-28 414,-28 520,-28 520,-28 526,-28 532,-34 532,-40 532,-40 532,-52 532,-52 532,-58 526,-64 520,-64"/>
+<text text-anchor="middle" x="467" y="-49.2" font-family="Arial" font-size="11.00">Correct unit conversion</text>
+<text text-anchor="middle" x="467" y="-37.2" font-family="Arial" font-size="11.00">kW&#45;minute → kWh</text>
+</g>
+<!-- B&#45;&gt;C -->
+<g id="edge2" class="edge">
+<title>B&#45;&gt;C</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M362.13,-46C373.03,-46 384.06,-46 394.65,-46"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="394.92,-48.45 401.92,-46 394.92,-43.55 394.92,-48.45"/>
+</g>
+<!-- D -->
+<g id="node4" class="node">
+<title>D</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M693,-92C693,-92 584,-92 584,-92 578,-92 572,-86 572,-80 572,-80 572,-68 572,-68 572,-62 578,-56 584,-56 584,-56 693,-56 693,-56 699,-56 705,-62 705,-68 705,-68 705,-80 705,-80 705,-86 699,-92 693,-92"/>
+<text text-anchor="middle" x="638.5" y="-71.2" font-family="Arial" font-size="11.00">Cleaned 40&#45;column ZIP</text>
+</g>
+<!-- C&#45;&gt;D -->
+<g id="edge3" class="edge">
+<title>C&#45;&gt;D</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M532.08,-56.59C542.77,-58.35 553.93,-60.19 564.81,-61.99"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="564.61,-64.44 571.92,-63.17 565.41,-59.61 564.61,-64.44"/>
+</g>
+<!-- E -->
+<g id="node5" class="node">
+<title>E</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M875,-36C875,-36 778,-36 778,-36 772,-36 766,-30 766,-24 766,-24 766,-12 766,-12 766,-6 772,0 778,0 778,0 875,0 875,0 881,0 887,-6 887,-12 887,-12 887,-24 887,-24 887,-30 881,-36 875,-36"/>
+<text text-anchor="middle" x="826.5" y="-21.2" font-family="Arial" font-size="11.00">KPI + CSV tables</text>
+<text text-anchor="middle" x="826.5" y="-9.2" font-family="Arial" font-size="11.00">+ 14 corrected charts</text>
+</g>
+<!-- C&#45;&gt;E -->
+<g id="edge4" class="edge">
+<title>C&#45;&gt;E</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M532.33,-40.96C596.2,-35.96 693.71,-28.32 758.51,-23.25"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="759.06,-25.66 765.85,-22.67 758.68,-20.78 759.06,-25.66"/>
+</g>
+<!-- F -->
+<g id="node6" class="node">
+<title>F</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M896,-148C896,-148 757,-148 757,-148 751,-148 745,-142 745,-136 745,-136 745,-124 745,-124 745,-118 751,-112 757,-112 757,-112 896,-112 896,-112 902,-112 908,-118 908,-124 908,-124 908,-136 908,-136 908,-142 902,-148 896,-148"/>
+<text text-anchor="middle" x="826.5" y="-133.2" font-family="Arial" font-size="11.00">Chronological split</text>
+<text text-anchor="middle" x="826.5" y="-121.2" font-family="Arial" font-size="11.00">70% train / 15% val / 15% test</text>
+</g>
+<!-- D&#45;&gt;F -->
+<g id="edge5" class="edge">
+<title>D&#45;&gt;F</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M699.38,-92.03C718.28,-97.72 739.29,-104.04 758.65,-109.87"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="758.01,-112.24 765.42,-111.91 759.42,-107.55 758.01,-112.24"/>
+</g>
+<!-- K -->
+<g id="node11" class="node">
+<title>K</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M1761,-92C1761,-92 1658,-92 1658,-92 1652,-92 1646,-86 1646,-80 1646,-80 1646,-68 1646,-68 1646,-62 1652,-56 1658,-56 1658,-56 1761,-56 1761,-56 1767,-56 1773,-62 1773,-68 1773,-68 1773,-80 1773,-80 1773,-86 1767,-92 1761,-92"/>
+<text text-anchor="middle" x="1709.5" y="-71.2" font-family="Arial" font-size="11.00">Plotly Dash dashboard</text>
+</g>
+<!-- D&#45;&gt;K -->
+<g id="edge10" class="edge">
+<title>D&#45;&gt;K</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M705.31,-74C778.94,-74 901.76,-74 1007.5,-74 1007.5,-74 1007.5,-74 1366,-74 1460.23,-74 1569.05,-74 1638.28,-74"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="1638.69,-76.45 1645.69,-74 1638.69,-71.55 1638.69,-76.45"/>
+</g>
+<!-- E&#45;&gt;K -->
+<g id="edge11" class="edge">
+<title>E&#45;&gt;K</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M887.17,-18.79C959.7,-19.68 1085.83,-21 1194,-21 1194,-21 1194,-21 1366,-21 1461.4,-21 1570.01,-41.33 1638.87,-56.81"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="1638.46,-59.23 1645.82,-58.38 1639.54,-54.45 1638.46,-59.23"/>
+</g>
+<!-- G -->
+<g id="node7" class="node">
+<title>G</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M1057,-148C1057,-148 960,-148 960,-148 954,-148 948,-142 948,-136 948,-136 948,-124 948,-124 948,-118 954,-112 960,-112 960,-112 1057,-112 1057,-112 1063,-112 1069,-118 1069,-124 1069,-124 1069,-136 1069,-136 1069,-142 1063,-148 1057,-148"/>
+<text text-anchor="middle" x="1008.5" y="-127.2" font-family="Arial" font-size="11.00">8 deployable features</text>
+</g>
+<!-- F&#45;&gt;G -->
+<g id="edge6" class="edge">
+<title>F&#45;&gt;G</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M908.02,-130C918.9,-130 929.96,-130 940.57,-130"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="940.83,-132.45 947.83,-130 940.83,-127.55 940.83,-132.45"/>
+</g>
+<!-- H -->
+<g id="node8" class="node">
+<title>H</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M1269,-148C1269,-148 1121,-148 1121,-148 1115,-148 1109,-142 1109,-136 1109,-136 1109,-124 1109,-124 1109,-118 1115,-112 1121,-112 1121,-112 1269,-112 1269,-112 1275,-112 1281,-118 1281,-124 1281,-124 1281,-136 1281,-136 1281,-142 1275,-148 1269,-148"/>
+<text text-anchor="middle" x="1195" y="-133.2" font-family="Arial" font-size="11.00">Compare 5 models</text>
+<text text-anchor="middle" x="1195" y="-121.2" font-family="Arial" font-size="11.00">+ validation threshold calibration</text>
+</g>
+<!-- G&#45;&gt;H -->
+<g id="edge7" class="edge">
+<title>G&#45;&gt;H</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M1069.15,-130C1079.51,-130 1090.5,-130 1101.5,-130"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="1101.72,-132.45 1108.72,-130 1101.72,-127.55 1101.72,-132.45"/>
+</g>
+<!-- I -->
+<g id="node9" class="node">
+<title>I</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M1397,-148C1397,-148 1333,-148 1333,-148 1327,-148 1321,-142 1321,-136 1321,-136 1321,-124 1321,-124 1321,-118 1327,-112 1333,-112 1333,-112 1397,-112 1397,-112 1403,-112 1409,-118 1409,-124 1409,-124 1409,-136 1409,-136 1409,-142 1403,-148 1397,-148"/>
+<text text-anchor="middle" x="1365" y="-133.2" font-family="Arial" font-size="11.00">Final refit</text>
+<text text-anchor="middle" x="1365" y="-121.2" font-family="Arial" font-size="11.00">+ held&#45;out test</text>
+</g>
+<!-- H&#45;&gt;I -->
+<g id="edge8" class="edge">
+<title>H&#45;&gt;I</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M1281.48,-130C1292.43,-130 1303.36,-130 1313.5,-130"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="1313.74,-132.45 1320.74,-130 1313.74,-127.55 1313.74,-132.45"/>
+</g>
+<!-- J -->
+<g id="node10" class="node">
+<title>J</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M1594,-148C1594,-148 1461,-148 1461,-148 1455,-148 1449,-142 1449,-136 1449,-136 1449,-124 1449,-124 1449,-118 1455,-112 1461,-112 1461,-112 1594,-112 1594,-112 1600,-112 1606,-118 1606,-124 1606,-124 1606,-136 1606,-136 1606,-142 1600,-148 1594,-148"/>
+<text text-anchor="middle" x="1527.5" y="-133.2" font-family="Arial" font-size="11.00">Model artifacts</text>
+<text text-anchor="middle" x="1527.5" y="-121.2" font-family="Arial" font-size="11.00">model + features + metadata</text>
+</g>
+<!-- I&#45;&gt;J -->
+<g id="edge9" class="edge">
+<title>I&#45;&gt;J</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M1409.01,-130C1419.24,-130 1430.5,-130 1441.88,-130"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="1441.98,-132.45 1448.98,-130 1441.98,-127.55 1441.98,-132.45"/>
+</g>
+<!-- J&#45;&gt;K -->
+<g id="edge12" class="edge">
+<title>J&#45;&gt;K</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M1586.44,-111.97C1604.66,-106.31 1624.89,-100.01 1643.56,-94.2"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="1644.4,-96.51 1650.36,-92.09 1642.94,-91.83 1644.4,-96.51"/>
+</g>
+<!-- L -->
+<g id="node12" class="node">
+<title>L</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M1916,-92C1916,-92 1825,-92 1825,-92 1819,-92 1813,-86 1813,-80 1813,-80 1813,-68 1813,-68 1813,-62 1819,-56 1825,-56 1825,-56 1916,-56 1916,-56 1922,-56 1928,-62 1928,-68 1928,-68 1928,-80 1928,-80 1928,-86 1922,-92 1916,-92"/>
+<text text-anchor="middle" x="1870.5" y="-77.2" font-family="Arial" font-size="11.00">KPIs, alerts, charts,</text>
+<text text-anchor="middle" x="1870.5" y="-65.2" font-family="Arial" font-size="11.00">calibrated prediction</text>
+</g>
+<!-- K&#45;&gt;L -->
+<g id="edge13" class="edge">
+<title>K&#45;&gt;L</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M1773.34,-74C1783.92,-74 1794.91,-74 1805.52,-74"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="1805.79,-76.45 1812.79,-74 1805.79,-71.55 1805.79,-76.45"/>
+</g>
+<!-- M -->
+<g id="node13" class="node">
+<title>M</title>
+<path fill="#eaf4f8" stroke="#2e5d73" d="M2066,-92C2066,-92 1980,-92 1980,-92 1974,-92 1968,-86 1968,-80 1968,-80 1968,-68 1968,-68 1968,-62 1974,-56 1980,-56 1980,-56 2066,-56 2066,-56 2072,-56 2078,-62 2078,-68 2078,-68 2078,-80 2078,-80 2078,-86 2072,-92 2066,-92"/>
+<text text-anchor="middle" x="2023" y="-77.2" font-family="Arial" font-size="11.00">Gemini explanation</text>
+<text text-anchor="middle" x="2023" y="-65.2" font-family="Arial" font-size="11.00">or local fallback</text>
+</g>
+<!-- L&#45;&gt;M -->
+<g id="edge14" class="edge">
+<title>L&#45;&gt;M</title>
+<path fill="none" stroke="#667780" stroke-width="1.3" d="M1928.4,-74C1938.81,-74 1949.73,-74 1960.28,-74"/>
+<polygon fill="#667780" stroke="#667780" stroke-width="1.3" points="1960.51,-76.45 1967.51,-74 1960.51,-71.55 1960.51,-76.45"/>
+</g>
+</g>
 </svg>

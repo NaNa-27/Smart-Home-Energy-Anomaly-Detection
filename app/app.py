@@ -6,9 +6,8 @@
 # Vị trí file: <repo>/app/app.py
 # Đọc artifact trực tiếp từ <repo>/notebooks/  (không copy trùng):
 #     best_model.pkl, feature_columns.pkl
-# Đọc dữ liệu vẽ biểu đồ từ <repo>/data/HomeC_cleaned_final.csv
-#     (nhớ giải nén HomeC_cleaned_final.rar trước khi chạy, hoặc chạy
-#     src/HomeC_preprocess.py trước để sinh bản mới nhất).
+# Đọc dữ liệu trực tiếp từ <repo>/data/HomeC_cleaned_final.zip.
+#     Không cần giải nén thủ công.
 # Đọc data/kpi_summary.json (do src/HomeC_preprocess.py sinh ra) để
 #     KPI Cards & Alert Panel luôn khớp với số liệu EDA, không hardcode.
 #
@@ -49,7 +48,9 @@ DATA_DIR = os.path.join(REPO_DIR, "data")
 
 MODEL_PATH = os.path.join(NOTEBOOKS_DIR, "best_model.pkl")
 FEATURES_PATH = os.path.join(NOTEBOOKS_DIR, "feature_columns.pkl")
-DATA_PATH = os.path.join(DATA_DIR, "HomeC_cleaned_final.csv")
+MODEL_METADATA_PATH = os.path.join(NOTEBOOKS_DIR, "model_metadata.json")
+FEATURE_DEFAULTS_PATH = os.path.join(NOTEBOOKS_DIR, "feature_defaults.json")
+DATA_PATH = os.path.join(DATA_DIR, "HomeC_cleaned_final.zip")
 KPI_PATH = os.path.join(DATA_DIR, "kpi_summary.json")
 TOP5_PATH = os.path.join(DATA_DIR, "top5_appliances.csv")
 CORR_PATH = os.path.join(DATA_DIR, "weather_energy_correlation.csv")
@@ -90,12 +91,12 @@ try:
 
     weather_cols = [c for c in weather_features_guess if c in df.columns]
 
-    daily_total = df.set_index("datetime").resample("D")[["use [kW]", "gen [kW]"]].sum()
+    daily_total = df.set_index("datetime").resample("D")[["use [kW]", "gen [kW]"]].sum() / 60.0
     hourly_avg = df.groupby("hour")[["use [kW]"]].mean() if "hour" in df.columns else \
         df.assign(hour=df["datetime"].dt.hour).groupby("hour")[["use [kW]"]].mean()
     dow_avg = df.groupby("dayofweek")[["use [kW]"]].mean() if "dayofweek" in df.columns else \
         df.assign(dayofweek=df["datetime"].dt.dayofweek).groupby("dayofweek")[["use [kW]"]].mean()
-    monthly_appl = (df.groupby("month")[grouped_cols].sum() / 1000.0) if "month" in df.columns \
+    monthly_appl = (df.groupby("month")[grouped_cols].sum() / 60.0 / 1000.0) if "month" in df.columns \
         else pd.DataFrame()
 
     daily_weather = df.set_index("datetime").resample("D")[
@@ -124,8 +125,7 @@ except FileNotFoundError:
     threshold = 5.0
     anomalies = df.iloc[0:0]
     data_status = (f"Chưa thấy {DATA_PATH} — đang vẽ dữ liệu giả. "
-                   f"Hãy chạy src/HomeC_preprocess.py hoặc giải nén "
-                   f"data/HomeC_cleaned_final.rar trước.")
+                   f"Hãy chạy src/HomeC_preprocess.py để tạo lại file ZIP dữ liệu.")
 
 # ---------- 2b. KPI summary (ưu tiên đọc từ kpi_summary.json) ----------
 try:
@@ -147,7 +147,7 @@ try:
     top5_df = pd.read_csv(TOP5_PATH, index_col=0).sort_values("Total_kWh", ascending=False)
 except FileNotFoundError:
     if grouped_cols:
-        totals = df[grouped_cols].sum().sort_values(ascending=False)
+        totals = (df[grouped_cols].sum() / 60.0).sort_values(ascending=False)
         top5_df = pd.DataFrame({"Total_kWh": totals, "Share_%": (totals / totals.sum() * 100).round(2)})
     else:
         top5_df = pd.DataFrame({"Total_kWh": [], "Share_%": []})
@@ -170,12 +170,22 @@ except FileNotFoundError:
 try:
     model = joblib.load(MODEL_PATH)
     feature_columns = joblib.load(FEATURES_PATH)
-    model_status = f"Mô hình sẵn sàng ({len(feature_columns)} cột feature)."
+    with open(MODEL_METADATA_PATH, "r", encoding="utf-8") as f:
+        model_metadata = json.load(f)
+    with open(FEATURE_DEFAULTS_PATH, "r", encoding="utf-8") as f:
+        feature_defaults = json.load(f)
+    decision_threshold = float(model_metadata.get("decision_threshold", 0.5))
+    test_f1 = model_metadata.get("test_metrics", {}).get("F1", "N/A")
+    model_status = (f"Mô hình sẵn sàng: {model_metadata.get('selected_model', 'model')} | "
+                    f"{len(feature_columns)} features | test F1={test_f1}.")
 except FileNotFoundError:
     model = None
     feature_columns = None
-    model_status = ("Chưa thấy best_model.pkl / feature_columns.pkl trong notebooks/ "
-                    "— đang dùng dự đoán giả lập. Hãy chạy notebook để xuất artifact.")
+    model_metadata = {}
+    feature_defaults = {}
+    decision_threshold = 0.5
+    model_status = ("Chưa thấy model artifacts trong notebooks/ — đang dùng dự đoán giả lập. "
+                    "Hãy chạy python src/train_model.py.")
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
@@ -225,13 +235,24 @@ def get_ai_explanation(prediction, temp_val, appliance_val):
 
 # ---------- 5. Hàm dự đoán đúng chuẩn ----------
 def predict_anomaly(user_inputs: dict):
+    """Return (class, probability/score) using the calibrated validation threshold."""
     if model is None or feature_columns is None:
-        temp = user_inputs.get("temperature", 0)
-        appl = user_inputs.get("total_appliance", 0)
-        return 1 if (temp > 80 or appl > 5) else 0
+        temp = float(user_inputs.get("temperature", 0) or 0)
+        appl = float(user_inputs.get("total_appliance", 0) or 0)
+        pred = 1 if (temp > 80 or appl > 5) else 0
+        return pred, float(pred)
 
-    row = pd.DataFrame([user_inputs]).reindex(columns=feature_columns, fill_value=0)
-    return int(model.predict(row)[0])
+    complete = dict(feature_defaults)
+    complete.update({k: v for k, v in user_inputs.items() if v is not None})
+    row = pd.DataFrame([complete]).reindex(columns=feature_columns)
+    if row.isna().any().any():
+        missing = row.columns[row.isna().any()].tolist()
+        raise ValueError(f"Thiếu giá trị cho features: {missing}")
+    if hasattr(model, "predict_proba"):
+        score = float(model.predict_proba(row)[:, 1][0])
+    else:
+        score = float(model.decision_function(row)[0])
+    return int(score >= decision_threshold), score
 
 
 # ==========================================================
@@ -254,60 +275,6 @@ fig_area.add_trace(go.Scatter(x=daily_total.index, y=daily_total["gen [kW]"], na
                                fill="tozeroy", line_color=COLOR_SOLAR))
 fig_area.update_layout(title="Tiêu thụ điện vs Phát điện mặt trời (theo ngày)",
                         xaxis_title="Ngày", yaxis_title="Năng lượng (kWh/ngày)")
-
-# 6.3 Stacked area chart - top appliances theo tháng
-fig_stacked = go.Figure()
-if not monthly_appl.empty:
-    top_for_stack = top5_df.head(6).index.tolist()
-    top_for_stack = [c for c in top_for_stack if c in monthly_appl.columns]
-    for c in top_for_stack:
-        fig_stacked.add_trace(go.Scatter(x=monthly_appl.index, y=monthly_appl[c], name=c,
-                                          stackgroup="one",
-                                          line_color=appliance_color_map.get(c)))
-fig_stacked.update_layout(title="Tiêu thụ điện theo tháng - Top thiết bị (Stacked Area)",
-                            xaxis_title="Tháng", yaxis_title="Năng lượng (MWh)")
-
-# 6.4 Correlation heatmap
-heatmap_cols = (["use [kW]", "gen [kW]"] + top5_df.head(5).index.tolist() + weather_cols)
-heatmap_cols = [c for c in heatmap_cols if c in df.columns]
-if len(heatmap_cols) >= 2:
-    sample_n = min(150_000, len(df))
-    corr_matrix = df[heatmap_cols].sample(sample_n, random_state=42).corr()
-    fig_heatmap = px.imshow(corr_matrix, text_auto=".2f", color_continuous_scale="RdBu_r",
-                             zmin=-1, zmax=1, title="Correlation Heatmap - Energy, Appliances & Weather")
-else:
-    fig_heatmap = px.imshow([[0]], title="Không đủ cột để vẽ correlation heatmap")
-
-# 6.5 Weather scatter + regression (numpy polyfit, không cần statsmodels)
-weather_pairs = [
-    ("temperature", "gen [kW]", "Temperature (°F)", "Solar Generation (kW)"),
-    ("cloudCover", "gen [kW]", "Cloud Cover (0-1)", "Solar Generation (kW)"),
-    ("humidity", "use [kW]", "Humidity (0-1)", "Energy Consumption (kW)"),
-    ("windSpeed", "use [kW]", "Wind Speed (mph)", "Energy Consumption (kW)"),
-]
-weather_pairs = [p for p in weather_pairs if p[0] in daily_weather.columns and p[1] in daily_weather.columns]
-default_pair = weather_pairs[0] if weather_pairs else (None, None, None, None)
-
-
-def build_weather_fig(x_col, y_col, xlabel, ylabel):
-    if x_col is None:
-        return px.scatter(title="Không có dữ liệu thời tiết phù hợp")
-    sub = daily_weather[[x_col, y_col]].dropna()
-    fig = px.scatter(sub, x=x_col, y=y_col,
-                      color_discrete_sequence=[COLOR_ENERGY if "use" in y_col else COLOR_SOLAR],
-                      labels={x_col: xlabel, y_col: ylabel})
-    if len(sub) > 2:
-        z = np.polyfit(sub[x_col], sub[y_col], 1)
-        x_line = np.linspace(sub[x_col].min(), sub[x_col].max(), 50)
-        y_line = np.polyval(z, x_line)
-        r = sub.corr().iloc[0, 1]
-        fig.add_trace(go.Scatter(x=x_line, y=y_line, mode="lines",
-                                  line_color=COLOR_ANOMALY, name=f"Regression (r={r:.2f})"))
-    fig.update_layout(title=f"{xlabel} vs {ylabel} (theo ngày)")
-    return fig
-
-
-fig_weather = build_weather_fig(*default_pair)
 
 # 6.6 Top-5 appliances bar chart
 fig_top5 = px.bar(top5.reset_index(), x="index", y="Total_kWh", text="Share_%",
@@ -343,24 +310,6 @@ dow_colors = [COLOR_HIGH if d >= 5 else COLOR_ENERGY for d in dow_avg.index]
 fig_dow = go.Figure(go.Bar(x=dow_labels, y=dow_avg["use [kW]"], marker_color=dow_colors))
 fig_dow.update_layout(title="Tiêu thụ điện trung bình theo ngày trong tuần",
                        xaxis_title="Ngày trong tuần", yaxis_title="Tiêu thụ TB (kW)")
-
-# 6.10 Calendar heatmap (month x day-of-month)
-cal_df = pd.DataFrame({
-    "day": daily_total.index.day,
-    "month": daily_total.index.month,
-    "value": daily_total["use [kW]"].values,
-})
-month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-if len(cal_df) > 0:
-    cal_pivot = cal_df.pivot_table(index="month", columns="day", values="value")
-    fig_calendar = px.imshow(cal_pivot, color_continuous_scale="YlOrRd",
-                              labels={"x": "Ngày trong tháng", "y": "Tháng", "color": "kWh"},
-                              title="Calendar Heatmap - Tổng tiêu thụ điện theo ngày (2016)")
-    fig_calendar.update_yaxes(tickmode="array", tickvals=list(cal_pivot.index),
-                               ticktext=[month_labels[m - 1] for m in cal_pivot.index])
-else:
-    fig_calendar = px.imshow([[0]], title="Không đủ dữ liệu cho calendar heatmap")
-
 
 # ==========================================================
 # 7. ALERT PANEL - cảnh báo bất thường (top N theo mức độ vượt ngưỡng)
@@ -448,8 +397,8 @@ kpi_row = html.Div([
     kpi_card("Total Energy", f"{kpi.get('total_energy_kwh', 0):,.0f} kWh",
              f"{kpi.get('date_range_start', '')[:10]} → {kpi.get('date_range_end', '')[:10]}",
              COLOR_ENERGY),
-    kpi_card("Average Energy", f"{kpi.get('average_energy_kw', 0):.3f} kW",
-             "Trung bình mỗi phút", COLOR_ENERGY),
+    kpi_card("Average Power", f"{kpi.get('average_power_kw', kpi.get('average_energy_kw', 0)):.3f} kW",
+             "Công suất trung bình", COLOR_ENERGY),
     kpi_card("Peak Consumption", f"{kpi.get('peak_consumption_kw', 0):.2f} kW",
              f"Lúc {kpi.get('peak_consumption_time', 'N/A')}", COLOR_SOLAR),
     kpi_card("Number of Anomalies", f"{kpi.get('number_of_anomalies', 0):,}",
@@ -466,8 +415,6 @@ def chart_card(fig, width="50%"):
                      style={"width": width, "display": "inline-block", "padding": "6px",
                             "boxSizing": "border-box"})
 
-
-weather_options = [{"label": f"{xl} vs {yl}", "value": i} for i, (x, y, xl, yl) in enumerate(weather_pairs)]
 
 app.layout = html.Div([
     html.H1("DAP391m - Smart Home Anomaly Detection Dashboard",
@@ -488,12 +435,22 @@ app.layout = html.Div([
     # ----- PREDICTION + AI -----
     html.Div([
         html.H3("Kiểm tra bất thường và AI phân tích"),
-        html.Label("Nhiệt độ (temperature, °F): "),
+        html.P("Form này cung cấp đầy đủ 8 features mà model đã được huấn luyện; is_weekend được suy ra từ dayofweek."),
+        html.Label("Nhiệt độ (°F): "),
         dcc.Input(id="input-temp", type="number", value=75, step=1),
-        html.Label("   Tổng thiết bị đang bật (total_appliance, kW): "),
-        dcc.Input(id="input-appliance", type="number", value=2, step=0.1),
-        html.Label("   Giờ trong ngày (hour): "),
+        html.Label("   Độ ẩm (0-1): "),
+        dcc.Input(id="input-humidity", type="number", value=0.5, step=0.01, min=0, max=1),
+        html.Label("   Điện mặt trời hiện tại (kW): "),
+        dcc.Input(id="input-gen", type="number", value=0.0, step=0.05, min=0),
+        html.Br(), html.Br(),
+        html.Label("Tổng công suất thiết bị (kW): "),
+        dcc.Input(id="input-appliance", type="number", value=2, step=0.1, min=0),
+        html.Label("   Giờ (0-23): "),
         dcc.Input(id="input-hour", type="number", value=12, step=1, min=0, max=23),
+        html.Label("   Thứ (0=Mon ... 6=Sun): "),
+        dcc.Input(id="input-dow", type="number", value=0, step=1, min=0, max=6),
+        html.Label("   Tháng (1-12): "),
+        dcc.Input(id="input-month", type="number", value=6, step=1, min=1, max=12),
         html.Br(), html.Br(),
         html.Button("Dự đoán và hỏi AI", id="predict-btn", n_clicks=0,
                     style={"fontSize": "16px", "padding": "10px"}),
@@ -514,18 +471,7 @@ app.layout = html.Div([
         chart_card(fig_pie),
         chart_card(fig_hourly),
         chart_card(fig_dow),
-        chart_card(fig_heatmap),
-        chart_card(fig_stacked),
-        chart_card(fig_calendar, width="100%"),
     ]),
-
-    html.H3("Tương quan Thời tiết - Năng lượng"),
-    html.Div([
-        html.Label("Chọn cặp biến để xem scatter + regression: "),
-        dcc.Dropdown(id="weather-pair-dropdown", options=weather_options,
-                     value=0 if weather_options else None, style={"width": "400px"}),
-    ], style={"marginBottom": "10px"}),
-    dcc.Graph(id="weather-graph", figure=fig_weather),
 
     # ----- SMART CITY RECOMMENDATIONS -----
     html.H3("Đề xuất tiết kiệm điện (Smart City Recommendation)"),
@@ -541,30 +487,36 @@ app.layout = html.Div([
      Output("ai-output", "children")],
     [Input("predict-btn", "n_clicks")],
     [State("input-temp", "value"),
+     State("input-humidity", "value"),
+     State("input-gen", "value"),
      State("input-appliance", "value"),
-     State("input-hour", "value")],
+     State("input-hour", "value"),
+     State("input-dow", "value"),
+     State("input-month", "value")],
 )
-def update_prediction(n_clicks, temp, appliance, hour):
+def update_prediction(n_clicks, temp, humidity, gen_kw, appliance, hour, dayofweek, month):
     if not n_clicks:
         return "", ""
 
-    user_inputs = {"temperature": temp, "total_appliance": appliance, "hour": hour}
-    pred = predict_anomaly(user_inputs)
-
-    text_result = "KẾT QUẢ: BẤT THƯỜNG" if pred == 1 else "KẾT QUẢ: BÌNH THƯỜNG"
-    ai_text = get_ai_explanation(pred, temp, appliance)
-    return text_result, ai_text
-
-
-@app.callback(
-    Output("weather-graph", "figure"),
-    Input("weather-pair-dropdown", "value"),
-)
-def update_weather_graph(idx):
-    if idx is None or not weather_pairs:
-        return fig_weather
-    x, y, xl, yl = weather_pairs[idx]
-    return build_weather_fig(x, y, xl, yl)
+    dayofweek = int(dayofweek or 0)
+    user_inputs = {
+        "temperature": temp,
+        "humidity": humidity,
+        "gen_kw": gen_kw,
+        "total_appliance": appliance,
+        "hour": hour,
+        "dayofweek": dayofweek,
+        "month": month,
+        "is_weekend": int(dayofweek >= 5),
+    }
+    try:
+        pred, score = predict_anomaly(user_inputs)
+        text_result = ("KẾT QUẢ: BẤT THƯỜNG" if pred == 1 else "KẾT QUẢ: BÌNH THƯỜNG")
+        text_result += f" — score={score:.3f}, ngưỡng={decision_threshold:.3f}"
+        ai_text = get_ai_explanation(pred, temp, appliance)
+        return text_result, ai_text
+    except Exception as exc:
+        return f"Không thể dự đoán: {exc}", "Hãy kiểm tra lại các giá trị đầu vào và model artifacts."
 
 
 # ---------- 12. Chạy app (Dash 3.x: dùng app.run, KHÔNG app.run_server) ----------

@@ -1,0 +1,66 @@
+{
+  "selected_model": "LightGBM",
+  "decision_threshold": 0.45079543,
+  "selection_metric": "validation F1 after probability-threshold calibration",
+  "split_strategy": "chronological 70% train / 15% validation / 15% test",
+  "training_sampling": "every 3rd train row for comparison; every 2nd train+validation row for final refit",
+  "label_definition": "use [kW] > mean(use [kW]) + 3*std(use [kW])",
+  "anomaly_threshold_kw": 4.033584,
+  "source_features": [
+    "gen [kW]",
+    "total_appliance",
+    "temperature",
+    "humidity",
+    "hour",
+    "dayofweek",
+    "month",
+    "is_weekend"
+  ],
+  "model_features": [
+    "gen_kw",
+    "total_appliance",
+    "temperature",
+    "humidity",
+    "hour",
+    "dayofweek",
+    "month",
+    "is_weekend"
+  ],
+  "train_rows": 352737,
+  "validation_rows": 75586,
+  "test_rows": 75587,
+  "final_fit_rows": 214162,
+  "train_period": [
+    "2016-01-01 00:00:00",
+    "2016-09-01 22:56:00"
+  ],
+  "validation_period": [
+    "2016-09-01 22:57:00",
+    "2016-10-24 10:42:00"
+  ],
+  "test_period": [
+    "2016-10-24 10:43:00",
+    "2016-12-15 22:29:00"
+  ],
+  "test_metrics": {
+    "F1": 0.2912,
+    "AUC": 0.8987,
+    "Precision": 0.2648,
+    "Recall": 0.3235
+  },
+  "confusion_matrix": [
+    [
+      74748,
+      397
+    ],
+    [
+      299,
+      143
+    ]
+  ],
+  "limitations": [
+    "The anomaly label is a statistical proxy rather than a verified equipment-fault label.",
+    "total_appliance is strongly related to household load and can dominate the model.",
+    "The timeline is reconstructed under a one-reading-per-minute assumption."
+  ]
+}

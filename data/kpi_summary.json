@@ -1,5 +1,8 @@
 {
+  "sample_interval_minutes": 1,
+  "timeline_note": "Reconstructed at one-minute intervals because the raw time counter increments by 1.",
   "total_energy_kwh": 7214.0,
+  "average_power_kw": 0.859,
   "average_energy_kw": 0.859,
   "peak_consumption_kw": 14.7146,
   "peak_consumption_time": "2016-07-30 16:04:00",
@@ -10,11 +13,11 @@
   "date_range_start": "2016-01-01 00:00:00",
   "date_range_end": "2016-12-15 22:29:00",
   "top5_appliances": {
-    "Furnace [kW]": 237834.92,
-    "Home office [kW]": 40961.28,
-    "Fridge [kW]": 32026.71,
-    "Barn [kW]": 29493.63,
-    "Wine cellar [kW]": 21233.08
+    "Furnace [kW]": 1981.96,
+    "Home office [kW]": 682.69,
+    "Fridge [kW]": 533.78,
+    "Barn [kW]": 491.56,
+    "Wine cellar [kW]": 353.88
   },
   "weather_correlation_use": {
     "temperature": 0.009,
