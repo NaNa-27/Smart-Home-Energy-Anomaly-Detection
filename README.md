@@ -1,19 +1,19 @@
-# DAP391m — Smart Home Energy Anomaly Detection
+# DAP391m - Smart Home Energy Anomaly Detection
 
-Dự án phân tích dữ liệu điện năng và thời tiết của **Home C**, xây dựng proxy anomaly label, so sánh năm mô hình và triển khai dashboard Plotly Dash.
+This project analyzes Home C's energy and weather data, builds a proxy anomaly label, compares five models, and implements the Plotly Dash dashboard.
 
 ## Current corrected version
 
-Bản này đã sửa các lỗi kỹ thuật quan trọng của bản trước:
+This version fixes the following critical technical errors from the previous version:
 
-- mọi phép cộng công suất theo phút được quy đổi đúng: `kWh = sum(kW) / 60`;
-- preprocessing có thể chạy lại nhiều lần mà không cộng lặp `Kitchen`, `Furnace` hoặc `total_appliance`;
-- script và dashboard đọc trực tiếp `data/HomeC_cleaned_final.zip`, không cần giải nén thủ công;
-- model dùng chronological split thay vì random split;
-- không dùng SMOTE trên chuỗi thời gian;
-- model cuối được lưu đúng với model và decision threshold đã đánh giá;
-- dashboard cung cấp đủ toàn bộ feature mà model cần;
-- README, notebook, model artifacts, KPI và biểu đồ đã được đồng bộ.
+- All minute power sums are correctly converted: `kWh = sum(kW) / 60`;
+- Preprocessing can be rerun multiple times without repeating the sum of `Kitchen`, `Furnace`, or `total_appliance`;
+- Scripts and dashboards directly read `data/HomeC_cleaned_final.zip`, eliminating the need for manual extraction;
+- The model uses chronological split instead of random split;
+- SMOTE is not used on the time series;
+- Final model is saved correctly with the evaluated model and decision threshold;
+- Dashboard provides all the features the model needs;
+- README, notebook, model artifacts, KPIs, and charts have been synchronized.
 
 ## Project structure
 
@@ -207,20 +207,20 @@ GEMINI_API_KEY=your_key_here
 
 Without the key, the app uses a local rule-based explanation.
 
-## Research-question findings
+## Research question findings
 
-### RQ1 — When are high-consumption anomalies most frequent?
+### RQ1 - When are high-consumption anomalies most frequent?
 
 - 15:00 has the highest anomaly rate at approximately 6.75%.
 - July and August dominate, with anomaly rates of approximately 9.87% and 11.91%.
 - Monday has the highest day-of-week anomaly rate at approximately 3.79%.
 
-### RQ2 — Which appliances contribute most?
+### RQ2 - Which appliances contribute most?
 
 - Furnace is the largest annual appliance group at 39.41% of measured appliance energy.
 - Furnace is also the largest appliance reading in 10,332 of the 12,418 proxy-anomaly rows.
 
-### RQ3 — How does weather relate to energy?
+### RQ3 - How does weather relate to energy?
 
 - Daily weather variables have weak direct linear correlation with household use.
 - Solar generation has a moderate positive daily correlation with temperature (`r ≈ 0.356`).
