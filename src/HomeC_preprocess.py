@@ -77,8 +77,8 @@ def read_input() -> tuple[pd.DataFrame, Path]:
         source = ZIP_PATH
     else:
         raise FileNotFoundError(
-            "Không tìm thấy HomeC.csv, HomeC_cleaned_final.csv hoặc "
-            "HomeC_cleaned_final.zip trong data/."
+            "HomeC.csv, HomeC_cleaned_final.csv, or HomeC_cleaned_final.zip"
+            "were not found in the data."
         )
     print(f"Reading: {source}")
     return pd.read_csv(source, low_memory=False), source
@@ -109,7 +109,7 @@ def to_time_period(hour: pd.Series) -> pd.Series:
 
 
 def main() -> None:
-    section("STEP 1 - LOAD AND NORMALIZE")
+    section("STEP 1: LOAD AND NORMALIZE")
     df, source = read_input()
     df.columns = [str(c).strip() for c in df.columns]
     print("Loaded shape:", df.shape)
@@ -131,7 +131,7 @@ def main() -> None:
     fixed_start, fixed_end = df["datetime"].min(), df["datetime"].max()
     print(f"Reconstructed one-minute timeline: {fixed_start} -> {fixed_end}")
 
-    section("STEP 2 - CLEANING")
+    section("STEP 2: CLEANING")
     missing = df.isna().sum()
     missing = missing[missing > 0]
     if missing.empty:
@@ -162,7 +162,7 @@ def main() -> None:
     if constant_cols:
         df = df.drop(columns=constant_cols)
 
-    section("STEP 3 - FEATURE ENGINEERING")
+    section("STEP 3: FEATURE ENGINEERING")
     if not ENERGY_COLUMNS.issubset(df.columns):
         raise KeyError(f"Dataset must contain {sorted(ENERGY_COLUMNS)}")
 
@@ -201,7 +201,7 @@ def main() -> None:
     print("Raw appliance circuits:", appliance_features)
     print("Grouped appliance columns:", grouped_appliance_cols)
 
-    section("STEP 4 - ANOMALY LABEL FOR EDA")
+    section("STEP 4: ANOMALY LABEL FOR EDA")
     target = "use [kW]"
     mu, sigma = df[target].mean(), df[target].std()
     k_sigma = 3
@@ -216,7 +216,7 @@ def main() -> None:
     print(f"Proxy anomalies: {n_anomalies:,} ({anomaly_rate:.2f}%)")
     print(f"IQR outliers: {iqr_outliers:,}")
 
-    section("STEP 5 - SAVE CLEANED DATASET")
+    section("STEP 5: SAVE CLEANED DATASET")
     save_df = df.drop(columns="_eda_anomaly")
     tmp_zip = ZIP_PATH.with_suffix(".tmp.zip")
     save_df.to_csv(
@@ -229,7 +229,7 @@ def main() -> None:
         CSV_PATH.unlink()
     print(f"Saved compressed dataset: {ZIP_PATH} ({save_df.shape[0]:,} rows, {save_df.shape[1]} cols)")
 
-    section("STEP 6 - APPLIANCE AND WEATHER TABLES")
+    section("STEP 6: APPLIANCE AND WEATHER TABLES")
     # One-minute kW readings -> kWh by multiplying by 1/60 hour.
     totals_kwh = (df[grouped_appliance_cols].sum() * SAMPLE_INTERVAL_HOURS).sort_values(ascending=False)
     share = (totals_kwh / totals_kwh.sum() * 100).round(2)
@@ -251,7 +251,7 @@ def main() -> None:
     corr_daily = daily_weather.corr()[["use [kW]", "gen [kW]"]].drop(["use [kW]", "gen [kW]"], errors="ignore")
     corr_daily.to_csv(CORR_PATH)
 
-    section("STEP 7 - VISUALIZATIONS")
+    section("STEP 7: VISUALIZATIONS")
     appliance_palette = sns.color_palette("Set2", max(len(totals_kwh), 1))
     appliance_color_map = {c: appliance_palette[i] for i, c in enumerate(totals_kwh.index)}
     top5 = top5_df.head(5)

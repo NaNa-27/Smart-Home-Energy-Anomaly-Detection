@@ -6,13 +6,13 @@ This project analyzes Home C's energy and weather data, builds a proxy anomaly l
 
 This version fixes the following critical technical errors from the previous version:
 
-- All minute power sums are correctly converted: `kWh = sum(kW) / 60`;
-- Preprocessing can be rerun multiple times without repeating the sum of `Kitchen`, `Furnace`, or `total_appliance`;
-- Scripts and dashboards directly read `data/HomeC_cleaned_final.zip`, eliminating the need for manual extraction;
-- The model uses chronological split instead of random split;
-- SMOTE is not used on the time series;
-- Final model is saved correctly with the evaluated model and decision threshold;
-- Dashboard provides all the features the model needs;
+- All minute power sums are correctly converted: `kWh = sum(kW) / 60`.
+- Preprocessing can be rerun multiple times without repeating the sum of `Kitchen`, `Furnace`, or `total_appliance`.
+- Scripts and dashboards directly read `data/HomeC_cleaned_final.zip`, eliminating the need for manual extraction.
+- The model uses chronological split instead of random split.
+- SMOTE is not used on the time series.
+- Final model is saved correctly with the evaluated model and decision threshold.
+- Dashboard provides all the features the model needs.
 - README, notebook, model artifacts, KPIs, and charts have been synchronized.
 
 ## Project structure
@@ -71,7 +71,7 @@ The raw `time` counter increases by 1 per row even though the dataset represents
 Each row contains average power in kW for one minute. Therefore:
 
 ```text
-energy_kWh = sum(power_kW) × (1 / 60 hour)
+energy_kWh = sum(power_kW) * (1 / 60 hour)
 ```
 
 Monthly values displayed in MWh use:
@@ -120,15 +120,15 @@ python src/HomeC_preprocess.py
 
 The script:
 
-1. reads `HomeC.csv`, `HomeC_cleaned_final.csv`, or the shipped ZIP;
-2. removes stale engineered columns before rebuilding them;
-3. reconstructs the one-minute timeline;
-4. cleans missing/duplicate/constant data;
-5. creates time, appliance-group and aggregate features;
-6. writes the cleaned dataset back to `HomeC_cleaned_final.zip`;
+1. reads `HomeC.csv`, `HomeC_cleaned_final.csv`, or the shipped ZIP.
+2. removes stale engineered columns before rebuilding them.
+3. reconstructs the one-minute timeline.
+4. cleans missing/duplicate/constant data.
+5. creates time, appliance-group and aggregate features.
+6. writes the cleaned dataset back to `HomeC_cleaned_final.zip`.
 7. regenerates KPI/CSV artifacts and all 14 charts.
 
-It is **idempotent**: rerunning it does not double-count grouped appliances.
+It is idempotent: rerunning it does not double-count grouped appliances.
 
 ## Rebuild model artifacts
 
@@ -138,11 +138,11 @@ python src/train_model.py
 
 The corrected model workflow uses:
 
-- chronological split: 70% train, 15% validation, 15% test;
-- Logistic Regression, Random Forest, XGBoost, LightGBM and Isolation Forest;
-- no random train/test shuffling;
-- no SMOTE;
-- validation-based probability-threshold calibration;
+- chronological split: 70% train, 15% validation, 15% test.
+- Logistic Regression, Random Forest, XGBoost, LightGBM and Isolation Forest.
+- no random train/test shuffling.
+- no SMOTE.
+- validation-based probability-threshold calibration.
 - final refit followed by one evaluation on the untouched test period.
 
 ### Deployable model features
@@ -177,9 +177,9 @@ This score is lower than the old random-split result but is more credible becaus
 
 Full details are stored in:
 
-- `notebooks/model_comparison.csv` — validation comparison;
-- `notebooks/model_metadata.json` — test metrics, periods, threshold and limitations;
-- `notebooks/feature_defaults.json` — safe defaults used by the dashboard.
+- `notebooks/model_comparison.csv` - validation comparison;
+- `notebooks/model_metadata.json` - test metrics, periods, threshold and limitations;
+- `notebooks/feature_defaults.json` - safe defaults used by the dashboard.
 
 ## Run dashboard
 
@@ -191,12 +191,12 @@ Open the local URL printed by Dash, normally `http://127.0.0.1:8050`.
 
 The dashboard reads the ZIP directly and includes:
 
-- KPI cards;
-- recent proxy-anomaly alerts;
-- corrected energy visualizations;
-- weather-energy plots;
-- a prediction form covering all model features;
-- calibrated anomaly score and decision threshold;
+- KPI cards.
+- recent proxy-anomaly alerts.
+- corrected energy visualizations.
+- weather-energy plots.
+- a prediction form covering all model features.
+- calibrated anomaly score and decision threshold.
 - optional Gemini explanation when `GEMINI_API_KEY` is configured.
 
 Optional `.env` file:
@@ -232,4 +232,4 @@ Without the key, the app uses a local rule-based explanation.
 2. `total_appliance` is closely related to household consumption and can dominate prediction.
 3. The reconstructed timeline depends on the one-reading-per-minute assumption.
 4. The model is evaluated on one household only.
-5. The final chronological test F1 shows meaningful temporal distribution shift; further work should consider rolling validation, adaptive thresholds and verified labels.
+5. The final chronological test F1 shows meaningful temporal distribution shift. Further work should consider rolling validation, adaptive thresholds and verified labels.

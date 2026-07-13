@@ -1,93 +1,93 @@
-# Báo cáo sửa lỗi dự án `SIMC_2026_revised`
+# Bug-Fix Report - `SIMC_2026_revised` Project
 
-## 1. Kết quả thực hiện
+## 1. Summary of Work Done
 
-Dự án đã được sửa trực tiếp từ file `SIMC_2026_revised.zip`, chạy lại preprocessing, tái tạo toàn bộ bảng KPI và 14 biểu đồ, huấn luyện lại model, cập nhật dashboard, notebook, README, báo cáo nội bộ và sơ đồ kiến trúc.
+The project was fixed directly from the `SIMC_2026_revised.zip` file: preprocessing was re-run, all KPI tables and 14 charts were regenerated, the model was retrained, and the dashboard, notebook, README, internal report, and architecture diagram were all updated.
 
-Bản sửa cuối gồm **34 file**, tổng dung lượng khoảng **27 MB**. Dataset tiếp tục được lưu dạng ZIP nên không làm gói nộp tăng lên hơn 160 MB.
+The final fixed submission contains 34 files, totaling roughly 27 MB. The dataset continues to be stored as a ZIP file, so the submission package does not exceed 160 MB.
 
-## 2. Các lỗi đã sửa
+## 2. Bugs Fixed
 
-### 2.1. Sửa sai đơn vị kW, kWh và MWh
+### 2.1. Fixed the kW / kWh / MWh unit error
 
-Dữ liệu là công suất trung bình theo từng phút, đơn vị kW. Bản cũ cộng trực tiếp các giá trị kW rồi ghi thành kWh/MWh, khiến nhiều số liệu lớn hơn thực tế khoảng 60 lần.
+The data represents average power per minute, in kW. The previous version summed the raw kW values directly and recorded the result as kWh/MWh, which inflated many figures by a factor of roughly 60.
 
-Công thức đúng đã được áp dụng:
+The correct formula has now been applied:
 
 ```text
 Energy (kWh) = sum(Power kW) / 60
 Energy (MWh) = sum(Power kW) / 60 / 1000
 ```
 
-Các thành phần đã được sửa:
+The following components were corrected:
 
-- `data/top5_appliances.csv`;
-- `data/kpi_summary.json`;
-- biểu đồ tổng năng lượng theo ngày;
-- area chart Use vs Solar;
-- stacked area theo tháng;
-- calendar heatmap;
-- Top-5 bar chart và pie chart;
-- toàn bộ biểu đồ tương ứng trên dashboard.
+- `data/top5_appliances.csv`.
+- `data/kpi_summary.json`.
+- the total-energy-by-day chart.
+- the Use vs Solar area chart.
+- the monthly stacked area chart.
+- the calendar heatmap.
+- the Top-5 bar chart and pie chart.
+- all corresponding charts on the dashboard.
 
-### 2.2. Sửa lỗi cộng lặp Kitchen và Furnace
+### 2.2. Fixed the Kitchen and Furnace double-counting bug
 
-Bản cũ có thể đọc lại `HomeC_cleaned_final.csv`, trong đó đã tồn tại:
+The previous version could re-read `HomeC_cleaned_final.csv`, which already contained:
 
-- `Kitchen [kW]`;
-- `Furnace [kW]`;
-- `total_appliance`;
-- các feature thời gian.
+- `Kitchen [kW]`.
+- `Furnace [kW]`.
+- `total_appliance`.
+- the engineered time features.
 
-Sau đó script lại đưa các cột này vào quá trình cộng nhóm, làm Furnace/Kitchen bị cộng thêm lần nữa.
+The script then fed these columns back into the group-summing step, causing Furnace/Kitchen to be added a second time.
 
-Bản sửa loại toàn bộ feature engineered cũ trước khi tái tạo:
+The fix removes all previously engineered features before regenerating them:
 
 ```text
 hour, dayofweek, month, is_weekend, season, time_period,
 Kitchen [kW], Furnace [kW], total_appliance
 ```
 
-Các nhóm sau đó chỉ được tính từ 14 circuit gốc. Preprocessing đã được chạy hai lần liên tiếp và cho kết quả `top5_appliances.csv` cùng `kpi_summary.json` giống hệt nhau.
+The groups are now computed only from the 14 raw circuits. Preprocessing was run twice in a row and produced identical `top5_appliances.csv` and `kpi_summary.json` outputs both times.
 
-### 2.3. Không cần giải nén dataset thủ công
+### 2.3. No more manual dataset extraction required
 
-Các file sau giờ đọc trực tiếp:
+The following files now read directly from:
 
 ```text
 data/HomeC_cleaned_final.zip
 ```
 
-- `src/HomeC_preprocess.py`;
-- `src/train_model.py`;
-- `app/app.py`;
+- `src/HomeC_preprocess.py`.
+- `src/train_model.py`.
+- `app/app.py`.
 - `notebooks/model_pipeline.ipynb`.
 
-Preprocessing cũng ghi kết quả trở lại chính file ZIP theo cách an toàn bằng file tạm rồi thay thế.
+Preprocessing also writes results back into the same ZIP file safely, using a temporary file that is then swapped in.
 
-### 2.4. Sửa phương pháp chia dữ liệu model
+### 2.4. Fixed the model's data-splitting method
 
-Bản cũ dùng `train_test_split(..., stratify=y)`, khiến các thời điểm trong cả năm bị trộn ngẫu nhiên giữa train và test. Với dữ liệu chuỗi thời gian và anomaly tập trung mạnh ở tháng 7–8, cách này cho kết quả quá lạc quan.
+The previous version used `train_test_split(..., stratify=y)`, which randomly shuffled timestamps across the entire year between train and test sets. Since this is time-series data with anomalies concentrated heavily in July–August, this approach produced overly optimistic results.
 
-Bản sửa dùng chronological split:
+The fix uses a chronological split:
 
-| Tập | Tỷ lệ | Khoảng thời gian tái dựng |
+| Set | Ratio | Reconstructed Time Range |
 |---|---:|---|
-| Train | 70% | 2016-01-01 → 2016-09-01 |
-| Validation | 15% | 2016-09-01 → 2016-10-24 |
-| Test | 15% | 2016-10-24 → 2016-12-15 |
+| Train | 70% | 2016-01-01 -> 2016-09-01 |
+| Validation | 15% | 2016-09-01 -> 2016-10-24 |
+| Test | 15% | 2016-10-24 -> 2016-12-15 |
 
-Model và decision threshold chỉ được chọn trên validation. Test set chỉ được dùng sau khi model cuối đã được chốt.
+The model and decision threshold were selected using only the validation set. The test set was used only after the final model had already been locked in.
 
-### 2.5. Loại SMOTE khỏi pipeline thời gian
+### 2.5. Removed SMOTE from the time-series pipeline
 
-SMOTE không còn được áp dụng. Các mẫu tổng hợp có thể phá vỡ cấu trúc thời gian và làm đánh giá khó diễn giải. Class imbalance được xử lý bằng class weight/scale weight và hiệu chỉnh decision threshold trên validation.
+SMOTE is no longer applied. Synthetic samples can break the time-series structure and make evaluation harder to interpret. Class imbalance is now handled via class weight / scale weight and by calibrating the decision threshold on the validation set.
 
-### 2.6. Giảm feature và đồng bộ với dashboard
+### 2.6. Reduced features and synchronized them with the dashboard
 
-Bản cũ train 60 feature nhưng dashboard chỉ nhập ba giá trị, sau đó điền 0 cho phần còn lại. Dự đoán vì vậy không phản ánh đầu vào thật.
+The previous version trained on 60 features, but the dashboard only accepted three input values and filled the rest with zeros. As a result, predictions did not reflect real input.
 
-Model mới dùng đúng tám feature deployable:
+The new model uses exactly eight deployable features:
 
 ```text
 gen_kw
@@ -100,147 +100,147 @@ month
 is_weekend
 ```
 
-Dashboard hiện cho nhập đầy đủ:
+The dashboard now accepts full input for:
 
-- nhiệt độ;
-- độ ẩm;
-- solar generation;
-- tổng công suất thiết bị;
-- giờ;
-- thứ trong tuần;
-- tháng.
+- temperature.
+- humidity.
+- solar generation.
+- total appliance power.
+- hour.
+- day of week.
+- month.
 
-`is_weekend` được suy ra tự động từ `dayofweek`.
+`is_weekend` is now automatically derived from `dayofweek`.
 
-### 2.7. Sửa artifact model không khớp kết quả đánh giá
+### 2.7. Fixed a mismatch between the saved model artifact and its evaluation results
 
-Bản cũ:
+In the previous version:
 
-1. đánh giá model trên dữ liệu đã scale + SMOTE;
-2. tuning làm Random Forest giảm F1 từ 0,9412 xuống 0,8477;
-3. sau đó tạo pipeline mới và fit lại bằng cách khác;
-4. vẫn lưu model đó làm `best_model.pkl`.
+1. the model was evaluated on scaled + SMOTE-resampled data.
+2. tuning caused the Random Forest's F1 score to drop from 0.9412 to 0.8477.
+3. a new pipeline was then created and refit using a different method.
+4. that model was still saved as `best_model.pkl`.
 
-Bản sửa lưu đồng bộ:
+The fix now saves everything consistently:
 
-- `best_model.pkl`;
-- `feature_columns.pkl`;
-- `feature_defaults.json`;
-- `model_metadata.json`;
+- `best_model.pkl`.
+- `feature_columns.pkl`.
+- `feature_defaults.json`.
+- `model_metadata.json`.
 - `model_comparison.csv`.
 
-`model_metadata.json` lưu rõ model, threshold, split, test metrics, confusion matrix và giới hạn nghiên cứu. Dashboard đọc trực tiếp metadata này.
+`model_metadata.json` clearly records the model, threshold, split, test metrics, confusion matrix, and research limitations. The dashboard reads this metadata directly.
 
-### 2.8. Sửa dashboard
+### 2.8. Fixed the dashboard
 
-Các thay đổi chính trong `app/app.py`:
+Key changes in `app/app.py`:
 
-- đọc dữ liệu ZIP trực tiếp;
-- quy đổi daily/monthly energy đúng đơn vị;
-- dùng Top-5 mới;
-- đọc model metadata và feature defaults;
-- hiển thị tên model, số feature và test F1;
-- dùng `predict_proba` cùng calibrated decision threshold;
-- hiển thị anomaly score và threshold;
-- không còn điền 0 cho hàng chục feature bị thiếu;
-- đổi KPI `Average Energy` thành `Average Power`;
-- sửa hướng dẫn chạy và thông báo lỗi dataset.
+- reads data directly from the ZIP file.
+- converts daily/monthly energy using the correct units.
+- uses the corrected Top-5 data.
+- reads model metadata and feature defaults.
+- displays the model name, feature count, and test F1 score.
+- uses `predict_proba` together with a calibrated decision threshold.
+- displays the anomaly score and threshold.
+- no longer fills dozens of missing features with zero.
+- renamed the `Average Energy` KPI to `Average Power`.
+- fixed the run instructions and dataset error messages.
 
-### 2.9. Bổ sung dependency
+### 2.9. Added missing dependencies
 
-`requirements.txt` đã bổ sung các thư viện bị thiếu:
+The following missing libraries were added to `requirements.txt`:
 
-- `seaborn`;
-- `python-dotenv`;
+- `seaborn`.
+- `python-dotenv`.
 - `nbformat`.
 
-### 2.10. Đồng bộ tài liệu
+### 2.10. Synchronized documentation
 
-Đã cập nhật hoặc tạo lại:
+The following were updated or regenerated:
 
-- `README.md`;
-- `report/Day2_MemberB_Report.md`;
-- `report/architecture_pipeline_mermaid_source.md`;
-- `report/architecture.png`;
-- `report/architecture.svg`;
+- `README.md`.
+- `report/Day2_MemberB_Report.md`.
+- `report/architecture_pipeline_mermaid_source.md`.
+- `report/architecture.png`.
+- `report/architecture.svg`.
 - `notebooks/model_pipeline.ipynb`.
 
-Các tài liệu mới không còn ghi artifact bị xóa, không còn yêu cầu giải nén RAR/CSV và không còn dùng số liệu Furnace sai.
+The updated documents no longer reference deleted artifacts, no longer require extracting RAR/CSV files, and no longer use the incorrect Furnace figures.
 
-## 3. Số liệu dữ liệu sau khi sửa
-
-| Chỉ số | Giá trị |
-|---|---:|
-| Số dòng | 503.910 |
-| Số cột | 40 |
-| Khoảng thời gian tái dựng | 2016-01-01 00:00 → 2016-12-15 22:29 |
-| Tổng điện hộ gia đình | 7.214,00 kWh |
-| Công suất trung bình | 0,8590 kW |
-| Peak | 14,7146 kW |
-| Tổng solar generation | 640,21 kWh |
-| Proxy anomaly threshold | 4,0336 kW |
-| Proxy anomalies | 12.418 |
-| Proxy anomaly rate | 2,46% |
-
-### Top-5 appliance đúng
-
-| Appliance | Total energy | Share | Peak hour | Peak date |
-|---|---:|---:|---:|---|
-| Furnace | 1.981,96 kWh | 39,41% | 05:00 | 2016-02-14 |
-| Home office | 682,69 kWh | 13,58% | 21:00 | 2016-08-09 |
-| Fridge | 533,78 kWh | 10,62% | 20:00 | 2016-08-14 |
-| Barn | 491,56 kWh | 9,78% | 16:00 | 2016-09-11 |
-| Wine cellar | 353,88 kWh | 7,04% | 17:00 | 2016-08-14 |
-
-## 4. Kết quả Research Questions sau khi kiểm tra lại
-
-### RQ1 — Thời điểm anomaly xuất hiện nhiều
-
-- 15:00 có anomaly rate cao nhất: khoảng **6,75%**.
-- 16:00 và 17:00 lần lượt khoảng **5,83%** và **5,80%**.
-- August có anomaly rate khoảng **11,91%**.
-- July có anomaly rate khoảng **9,87%**.
-- Monday có anomaly rate cao nhất theo thứ: khoảng **3,79%**.
-
-### RQ2 — Appliance đóng góp chính
-
-- Furnace chiếm **39,41%** tổng năng lượng của các appliance được đo.
-- Furnace là appliance có giá trị lớn nhất trong **10.332/12.418** anomaly rows.
-
-Điều này cho thấy Furnace liên quan mạnh đến proxy high-load anomaly, nhưng không đồng nghĩa thiết bị bị hỏng.
-
-### RQ3 — Weather và energy
-
-- Weather có tương quan tuyến tính yếu với household use ở mức daily aggregation.
-- Solar generation tương quan dương với temperature, `r ≈ 0,356`.
-- Nhiệt độ trung bình trong anomaly rows khoảng **68,25°F**, so với **50,30°F** ở normal rows.
-
-Đây là association mô tả, chưa phải bằng chứng nhân quả.
-
-## 5. Kết quả model mới
-
-### Validation comparison
-
-| Model | F1 | AUC | Precision | Recall | Decision threshold |
-|---|---:|---:|---:|---:|---:|
-| LightGBM | 0,2987 | 0,9511 | 0,2241 | 0,4477 | 0,450795 |
-| Random Forest | 0,2424 | 0,9287 | 0,1445 | 0,7503 | 0,139608 |
-| XGBoost | 0,2222 | 0,9435 | 0,1427 | 0,5017 | 0,644966 |
-| Logistic Regression | 0,2131 | 0,9230 | 0,9304 | 0,1204 | 0,999999 |
-| Isolation Forest | 0,1381 | 0,7529 | 0,1453 | 0,1316 | 0,602938 |
-
-### Selected final model
-
-Selected model: **LightGBM**
-
-Held-out chronological test result:
+## 3. Data Statistics After the Fix
 
 | Metric | Value |
 |---|---:|
-| F1 | 0,2912 |
-| ROC-AUC | 0,8987 |
-| Precision | 0,2648 |
-| Recall | 0,3235 |
+| Number of rows | 503,910 |
+| Number of columns | 40 |
+| Reconstructed time range | 2016-01-01 00:00 → 2016-12-15 22:29 |
+| Total household electricity | 7,214.00 kWh |
+| Average power | 0.8590 kW |
+| Peak | 14.7146 kW |
+| Total solar generation | 640.21 kWh |
+| Proxy anomaly threshold | 4.0336 kW |
+| Proxy anomalies | 12,418 |
+| Proxy anomaly rate | 2.46% |
+
+### Corrected Top-5 Appliances
+
+| Appliance | Total Energy | Share | Peak Hour | Peak Date |
+|---|---:|---:|---:|---|
+| Furnace | 1,981.96 kWh | 39.41% | 05:00 | 2016-02-14 |
+| Home office | 682.69 kWh | 13.58% | 21:00 | 2016-08-09 |
+| Fridge | 533.78 kWh | 10.62% | 20:00 | 2016-08-14 |
+| Barn | 491.56 kWh | 9.78% | 16:00 | 2016-09-11 |
+| Wine cellar | 353.88 kWh | 7.04% | 17:00 | 2016-08-14 |
+
+## 4. Research Question Results After Re-Verification
+
+### RQ1 - When anomalies occur most frequently
+
+- 15:00 has the highest anomaly rate, at roughly 6.75%.
+- 16:00 and 17:00 follow at roughly 5.83% and 5.80%, respectively.
+- August has an anomaly rate of roughly 11.91%.
+- July has an anomaly rate of roughly 9.87%.
+- Monday has the highest anomaly rate by day of week, at roughly 3.79%.
+
+### RQ2 - Main contributing appliance
+
+- Furnace accounts for 39.41% of total measured appliance energy.
+- Furnace is the largest-value appliance in 10,332 of 12,418 anomaly rows.
+
+This indicates that Furnace is strongly associated with the proxy high-load anomaly, but this does not mean the device is malfunctioning.
+
+### RQ3 - Weather and energy
+
+- Weather shows a weak linear correlation with household usage at the daily aggregation level.
+- Solar generation is positively correlated with temperature, `r ≈ 0.356`.
+- Average temperature in anomaly rows is roughly 68.25°F, compared with 50.30°F in normal rows.
+
+This is a descriptive association, not evidence of causation.
+
+## 5. New Model Results
+
+### Validation Comparison
+
+| Model | F1 | AUC | Precision | Recall | Decision Threshold |
+|---|---:|---:|---:|---:|---:|
+| LightGBM | 0.2987 | 0.9511 | 0.2241 | 0.4477 | 0.450795 |
+| Random Forest | 0.2424 | 0.9287 | 0.1445 | 0.7503 | 0.139608 |
+| XGBoost | 0.2222 | 0.9435 | 0.1427 | 0.5017 | 0.644966 |
+| Logistic Regression | 0.2131 | 0.9230 | 0.9304 | 0.1204 | 0.999999 |
+| Isolation Forest | 0.1381 | 0.7529 | 0.1453 | 0.1316 | 0.602938 |
+
+### Selected Final Model
+
+Selected model: **LightGBM**
+
+Held-out chronological test results:
+
+| Metric | Value |
+|---|---:|
+| F1 | 0.2912 |
+| ROC-AUC | 0.8987 |
+| Precision | 0.2648 |
+| Recall | 0.3235 |
 
 Confusion matrix:
 
@@ -249,50 +249,50 @@ Confusion matrix:
  [  299, 143]]
 ```
 
-Kết quả thấp hơn random split cũ nhưng đáng tin cậy hơn vì model phải dự đoán một giai đoạn tương lai chưa xuất hiện trong train.
+Results are lower than under the previous random split, but more trustworthy, since the model must predict a future period that did not appear in training.
 
-## 6. Các file quan trọng đã sửa hoặc bổ sung
+## 6. Key Files Fixed or Added
 
-| File | Thay đổi |
+| File | Change |
 |---|---|
-| `src/HomeC_preprocess.py` | Viết lại preprocessing idempotent, đọc/ghi ZIP, sửa đơn vị, tạo lại KPI và 14 chart |
-| `src/train_model.py` | Thêm pipeline chronological split, model comparison, threshold calibration và artifact export |
-| `app/app.py` | Sửa dữ liệu/đơn vị, model input, prediction threshold và metadata |
-| `notebooks/model_pipeline.ipynb` | Đồng bộ workflow và kết quả mới |
-| `notebooks/best_model.pkl` | LightGBM model mới |
-| `notebooks/feature_columns.pkl` | 8 feature đúng với dashboard |
-| `notebooks/feature_defaults.json` | Default values khi cần |
-| `notebooks/model_metadata.json` | Split, threshold, test metrics và limitations |
-| `notebooks/model_comparison.csv` | Validation comparison mới |
-| `data/HomeC_cleaned_final.zip` | Dataset 40 cột được tái tạo sạch, không double-count |
-| `data/kpi_summary.json` | KPI đúng đơn vị |
-| `data/top5_appliances.csv` | Top-5 đúng đơn vị và không cộng lặp |
-| `visualization/*.png` | 14 hình được tạo lại |
-| `README.md` | Hướng dẫn và kết quả mới |
-| `report/Day2_MemberB_Report.md` | Phân tích RQ và giới hạn mới |
-| `report/architecture.*` | Kiến trúc pipeline mới |
-| `requirements.txt` | Bổ sung dependency thiếu |
+| `src/HomeC_preprocess.py` | Rewrote preprocessing to be idempotent, read/write ZIP directly, fix units, regenerate KPIs and 14 charts |
+| `src/train_model.py` | Added chronological split pipeline, model comparison, threshold calibration, and artifact export |
+| `app/app.py` | Fixed data/units, model input, prediction threshold, and metadata |
+| `notebooks/model_pipeline.ipynb` | Synced workflow and new results |
+| `notebooks/best_model.pkl` | New LightGBM model |
+| `notebooks/feature_columns.pkl` | 8 features matching the dashboard |
+| `notebooks/feature_defaults.json` | Default values as needed |
+| `notebooks/model_metadata.json` | Split, threshold, test metrics, and limitations |
+| `notebooks/model_comparison.csv` | New validation comparison |
+| `data/HomeC_cleaned_final.zip` | Cleanly regenerated 40-column dataset, no double-counting |
+| `data/kpi_summary.json` | Correct-unit KPIs |
+| `data/top5_appliances.csv` | Correct-unit Top-5, no double-counting |
+| `visualization/*.png` | 14 regenerated figures |
+| `README.md` | Updated instructions and results |
+| `report/Day2_MemberB_Report.md` | New RQ analysis and limitations |
+| `report/architecture.*` | New pipeline architecture |
+| `requirements.txt` | Added missing dependencies |
 
-## 7. Kiểm tra chất lượng đã thực hiện
+## 7. Quality Checks Performed
 
-- `HomeC_preprocess.py`: vượt qua `py_compile`.
-- `train_model.py`: vượt qua `py_compile`.
-- `app.py`: vượt qua `py_compile`.
-- Notebook: hợp lệ theo chuẩn nbformat v4, gồm 13 cells.
-- Dataset ZIP: đọc thành công, đúng 503.910 × 40.
-- Dataset ZIP: vượt qua kiểm tra integrity.
-- Kitchen group: khớp tổng ba circuit, sai số floating-point dưới `1e-15`.
-- Furnace group: khớp tổng hai circuit, sai số dưới `1e-15`.
-- `total_appliance`: khớp tổng 14 circuit, sai số dưới `1e-15`.
-- Preprocessing chạy hai lần liên tiếp: Top-5 và KPI không thay đổi.
-- Model artifact: load thành công.
-- Feature count: đúng 8.
-- Prediction thử với median defaults: thành công.
-- Project không chứa CSV 162 MB đã giải nén và không chứa `__pycache__`/`.pyc`.
+- `HomeC_preprocess.py`: passed `py_compile`.
+- `train_model.py`: passed `py_compile`.
+- `app.py`: passed `py_compile`.
+- Notebook: valid per the nbformat v4 standard, containing 13 cells.
+- Dataset ZIP: read successfully, exactly 503,910 * 40.
+- Dataset ZIP: passed integrity check.
+- Kitchen group: matches the sum of its three circuits, floating-point error under `1e-15`.
+- Furnace group: matches the sum of its two circuits, error under `1e-15`.
+- `total_appliance`: matches the sum of all 14 circuits, error under `1e-15`.
+- Preprocessing run twice in a row: Top-5 and KPI results unchanged.
+- Model artifact: loaded successfully.
+- Feature count: exactly 8.
+- Test prediction with median defaults: successful.
+- Project contains no extracted 162 MB CSV and no `__pycache__`/`.pyc` files.
 
-Dashboard chưa được mở bằng web server trong môi trường kiểm tra vì package Dash không được cài sẵn tại runtime hiện tại. Tuy nhiên file đã vượt qua kiểm tra cú pháp, model prediction logic đã được kiểm tra riêng, và `dash` đã có trong `requirements.txt`.
+The dashboard was not launched via a web server in the test environment because the Dash package was not pre-installed in the current runtime. However, the file passed syntax checks, the model prediction logic was tested separately, and `dash` is now listed in `requirements.txt`.
 
-## 8. Cách chạy bản sửa
+## 8. How to Run the Fixed Version
 
 ```bash
 pip install -r requirements.txt
@@ -301,15 +301,15 @@ python src/train_model.py
 python app/app.py
 ```
 
-Không cần giải nén `HomeC_cleaned_final.zip`.
+There is no need to extract `HomeC_cleaned_final.zip`.
 
-## 9. Giới hạn còn lại
+## 9. Remaining Limitations
 
-Các vấn đề sau là giới hạn nghiên cứu, không phải lỗi code có thể sửa hoàn toàn trong bản hiện tại:
+The following are research limitations, not code bugs that can be fully fixed in the current version:
 
-1. anomaly label vẫn là proxy `mean + 3×std`, chưa phải ground-truth fraud/fault label;
-2. timeline được tái dựng từ giả định một mẫu/phút;
-3. `total_appliance` liên quan mạnh với household use và có thể chi phối model;
-4. dữ liệu chỉ thuộc một household;
-5. chronological test F1 cho thấy distribution shift đáng kể;
-6. cần thêm rolling/walk-forward validation, verified event labels và external household validation nếu muốn phát triển thành paper/hội nghị.
+1. the anomaly label is still a proxy (`mean + 3×std`), not a ground-truth fraud/fault label.
+2. the timeline is reconstructed under the assumption of one sample per minute.
+3. `total_appliance` is strongly correlated with household usage and may dominate the model.
+4. the data covers only a single household.
+5. the chronological test F1 shows a significant distribution shift.
+6. further rolling/walk-forward validation, verified event labels, and external household validation would be needed to develop this into a paper or conference submission.
