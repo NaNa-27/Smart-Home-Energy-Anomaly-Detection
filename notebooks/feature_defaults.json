@@ -1,8 +1,7 @@
 {
-  "gen_kw": 0.00430000014603138,
-  "total_appliance": 0.42971664667129517,
-  "temperature": 54.790000915527344,
-  "humidity": 0.6800000071525574,
+  "gen_kw": 0.0043,
+  "temperature": 54.79,
+  "humidity": 0.68,
   "hour": 11.0,
   "dayofweek": 3.0,
   "month": 5.0,

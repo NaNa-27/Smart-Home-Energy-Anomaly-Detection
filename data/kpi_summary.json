@@ -6,9 +6,55 @@
   "average_energy_kw": 0.859,
   "peak_consumption_kw": 14.7146,
   "peak_consumption_time": "2016-07-30 16:04:00",
-  "number_of_anomalies": 12418,
-  "anomaly_rate_pct": 2.46,
-  "anomaly_threshold_kw": 4.0336,
+  "number_of_anomalies": 11140,
+  "anomaly_rate_pct": 2.21,
+  "anomaly_label_definition": "use [kW] exceeds prior 30-day rolling mean + 3 rolling std; current row excluded",
+  "anomaly_threshold_kw": 4.3952,
+  "global_train_threshold_kw": 4.3952,
+  "global_train_number_of_anomalies": 9935,
+  "global_train_anomaly_rate_pct": 1.97,
+  "local_30d_number_of_anomalies": 11140,
+  "local_30d_anomaly_rate_pct": 2.21,
+  "split_anomaly_rates_percent": {
+    "global": {
+      "train": 2.527,
+      "validation": 0.983,
+      "test": 0.368
+    },
+    "local_30d": {
+      "train": 2.505,
+      "validation": 0.693,
+      "test": 2.355
+    }
+  },
+  "monthly_global_rates_percent": {
+    "1": 0.361,
+    "2": 0.584,
+    "3": 0.291,
+    "4": 0.292,
+    "5": 0.361,
+    "6": 0.218,
+    "7": 8.107,
+    "8": 9.81,
+    "9": 1.512,
+    "10": 0.302,
+    "11": 0.421,
+    "12": 0.237
+  },
+  "monthly_local_rates_percent": {
+    "1": 1.396,
+    "2": 1.83,
+    "3": 1.228,
+    "4": 1.748,
+    "5": 1.427,
+    "6": 1.803,
+    "7": 7.807,
+    "8": 2.789,
+    "9": 0.204,
+    "10": 1.81,
+    "11": 2.528,
+    "12": 1.469
+  },
   "total_solar_generation_kwh": 640.21,
   "date_range_start": "2016-01-01 00:00:00",
   "date_range_end": "2016-12-15 22:29:00",

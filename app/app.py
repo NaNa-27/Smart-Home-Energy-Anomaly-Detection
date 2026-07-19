@@ -1,9 +1,5 @@
 # ==========================================================
-# DAP391m - Smart Home Anomaly Detection Dashboard
-# Member C: Dashboard + App + Integrating AI Services
-# REVISED VERSION - full KPI / chart / alert dashboard
-#
-# File location: <repo>/app/app.py
+# Smart Home Anomaly Detection Dashboard
 # Reads artifacts directly from <repo>/notebooks/ (no duplicate copies):
 #     best_model.pkl, feature_columns.pkl
 # Reads data directly from <repo>/data/HomeC_cleaned_final.zip.
@@ -67,13 +63,35 @@ APPLIANCE_COLORWAY = px.colors.qualitative.Set2
 
 # ---------- 1. Initialization ----------
 app = dash.Dash(__name__)
-app.title = "DAP391m - Smart Home Anomaly Detection"
+app.title = "Smart Home Anomaly Detection"
 
 # ---------- 2. Dashboard data ----------
 data_status = ""
 weather_features_guess = ["temperature", "apparentTemperature", "humidity", "visibility",
                            "pressure", "windSpeed", "cloudCover", "windBearing",
                            "precipIntensity", "dewPoint", "precipProbability"]
+
+def compute_local_anomalies(frame):
+    if frame.empty or "use [kW]" not in frame.columns or "datetime" not in frame.columns:
+        empty_threshold = pd.Series([], dtype=float)
+        return 5.0, empty_threshold, np.zeros(len(frame), dtype=bool)
+
+    use = frame["use [kW]"].astype(float).reset_index(drop=True)
+    train_end = int(len(frame) * 0.70)
+    train = use.iloc[:train_end]
+    train_global_threshold = float(train.mean() + 3 * train.std())
+
+    indexed = frame.set_index("datetime", drop=False)
+    prior_use = indexed["use [kW]"].astype(float).shift(1)
+    rolling_mean = prior_use.rolling("30D", min_periods=1440).mean()
+    rolling_std = prior_use.rolling("30D", min_periods=1440).std()
+    local_threshold = (
+        rolling_mean.fillna(float(train.mean()))
+        + 3 * rolling_std.fillna(float(train.std()))
+    ).reset_index(drop=True)
+    anomaly_mask = (use > local_threshold).to_numpy()
+    return train_global_threshold, local_threshold, anomaly_mask
+
 
 try:
     df = pd.read_csv(DATA_PATH, low_memory=False)
@@ -103,9 +121,11 @@ try:
         ["use [kW]", "gen [kW]"] + weather_cols
     ].mean(numeric_only=True)
 
-    mu, sigma = df["use [kW]"].mean(), df["use [kW]"].std()
-    threshold = mu + 3 * sigma
-    anomalies = df[df["use [kW]"] > threshold].copy()
+    threshold, local_threshold, anomaly_mask = compute_local_anomalies(df)
+    anomalies = df[anomaly_mask].copy()
+    if not anomalies.empty:
+        anomalies["threshold_kw"] = local_threshold.loc[anomalies.index].to_numpy()
+        anomalies["breach_kw"] = anomalies["use [kW]"] - anomalies["threshold_kw"]
     if grouped_cols:
         anomalies["top_appliance"] = df.loc[anomalies.index, grouped_cols].idxmax(axis=1)
 
@@ -139,6 +159,7 @@ except FileNotFoundError:
         "peak_consumption_time": str(df.loc[df["use [kW]"].idxmax(), "datetime"]),
         "number_of_anomalies": int(len(anomalies)),
         "anomaly_rate_pct": round(len(anomalies) / max(len(df), 1) * 100, 2),
+        "anomaly_label_definition": "prior 30-day rolling threshold, current row excluded",
         "anomaly_threshold_kw": round(threshold, 4),
     }
 
@@ -190,7 +211,7 @@ except FileNotFoundError:
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
-    print(f"[AI] GEMINI_API_KEY found (suffix ...{GEMINI_API_KEY[-4:]}). Mode: real Gemini.")
+    print("[AI] GEMINI_API_KEY found. Mode: real Gemini.")
 else:
     print("[AI] GEMINI_API_KEY NOT found. Mode: rule-based fallback.")
 
@@ -320,9 +341,11 @@ def build_alert_cards(anomalies_df, threshold_val, max_alerts=5):
         return [html.Div("No anomalies detected in the current data.",
                           style={"color": COLOR_NORMAL, "fontWeight": "bold"})]
 
-    top_alerts = anomalies_df.sort_values("use [kW]", ascending=False).head(max_alerts)
+    sort_column = "breach_kw" if "breach_kw" in anomalies_df.columns else "use [kW]"
+    top_alerts = anomalies_df.sort_values(sort_column, ascending=False).head(max_alerts)
     cards = []
     for _, row in top_alerts.iterrows():
+        row_threshold = float(row.get("threshold_kw", threshold_val))
         appliance_note = (f" Top contributing appliance: {row['top_appliance']}."
                            if "top_appliance" in row and pd.notna(row.get("top_appliance"))
                            else "")
@@ -330,7 +353,7 @@ def build_alert_cards(anomalies_df, threshold_val, max_alerts=5):
             html.Span("[WARNING] ", style={"color": COLOR_ANOMALY, "fontSize": "18px"}),
             html.B(f"{row['datetime']}"),
             html.Span(f" - Consumption of {row['use [kW]']:.2f} kW exceeded the normal threshold "
-                      f"({threshold_val:.2f} kW).{appliance_note}"),
+                      f"({row_threshold:.2f} kW).{appliance_note}"),
         ], style={"padding": "8px 12px", "borderLeft": f"4px solid {COLOR_ANOMALY}",
                   "backgroundColor": "#FDEDEE", "marginBottom": "6px", "borderRadius": "4px"}))
     return cards
@@ -418,7 +441,7 @@ def chart_card(fig, width="50%"):
 
 
 app.layout = html.Div([
-    html.H1("DAP391m - Smart Home Anomaly Detection Dashboard",
+    html.H1("Smart Home Anomaly Detection Dashboard",
             style={"textAlign": "center"}),
     html.P(model_status, style={"textAlign": "center",
                                 "color": "green" if model is not None else "darkorange"}),
@@ -436,7 +459,7 @@ app.layout = html.Div([
     # ----- PREDICTION + AI -----
     html.Div([
         html.H3("Anomaly Check and AI Analysis"),
-        html.P("This form provides all 8 features the model was trained on; is_weekend is derived from dayofweek."),
+        html.P("Leakage-free model inputs; total appliance power is kept only as AI context."),
         html.Label("Temperature (°F): "),
         dcc.Input(id="input-temp", type="number", value=75, step=1),
         html.Label("   Humidity (0-1): "),

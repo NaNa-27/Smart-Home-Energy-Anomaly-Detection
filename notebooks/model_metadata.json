@@ -1,14 +1,27 @@
 {
-  "selected_model": "LightGBM",
-  "decision_threshold": 0.45079543,
-  "selection_metric": "validation F1 after probability-threshold calibration",
-  "split_strategy": "chronological 70% train / 15% validation / 15% test",
-  "training_sampling": "every 3rd train row for comparison; every 2nd train+validation row for final refit",
-  "label_definition": "use [kW] > mean(use [kW]) + 3*std(use [kW])",
-  "anomaly_threshold_kw": 4.033584,
+  "selected_model": "XGBoost",
+  "decision_threshold": 0.83064663,
+  "test_metrics": {
+    "F1": 0.0,
+    "AUC": 0.7674,
+    "Precision": 0.0,
+    "Recall": 0.0
+  },
+  "confusion_matrix": [
+    [
+      73807,
+      0
+    ],
+    [
+      1780,
+      0
+    ]
+  ],
+  "split_strategy": "chronological 70/15/15",
+  "label_definition": "use [kW] exceeds prior 30-day rolling mean + 3 rolling std; current row excluded",
+  "global_threshold_train_kw": 4.395228,
   "source_features": [
     "gen [kW]",
-    "total_appliance",
     "temperature",
     "humidity",
     "hour",
@@ -18,7 +31,6 @@
   ],
   "model_features": [
     "gen_kw",
-    "total_appliance",
     "temperature",
     "humidity",
     "hour",
@@ -26,41 +38,51 @@
     "month",
     "is_weekend"
   ],
-  "train_rows": 352737,
-  "validation_rows": 75586,
-  "test_rows": 75587,
-  "final_fit_rows": 214162,
-  "train_period": [
-    "2016-01-01 00:00:00",
-    "2016-09-01 22:56:00"
-  ],
-  "validation_period": [
-    "2016-09-01 22:57:00",
-    "2016-10-24 10:42:00"
-  ],
-  "test_period": [
-    "2016-10-24 10:43:00",
-    "2016-12-15 22:29:00"
-  ],
-  "test_metrics": {
-    "F1": 0.2912,
-    "AUC": 0.8987,
-    "Precision": 0.2648,
-    "Recall": 0.3235
+  "leakage_control": "total_appliance excluded from deployable model because it is an additive component of use [kW]",
+  "split_anomaly_rates_percent": {
+    "global": {
+      "train": 2.527,
+      "validation": 0.983,
+      "test": 0.368
+    },
+    "local_30d": {
+      "train": 2.505,
+      "validation": 0.693,
+      "test": 2.355
+    }
   },
-  "confusion_matrix": [
-    [
-      74748,
-      397
-    ],
-    [
-      299,
-      143
-    ]
-  ],
+  "monthly_global_rates_percent": {
+    "1": 0.361,
+    "2": 0.584,
+    "3": 0.291,
+    "4": 0.292,
+    "5": 0.361,
+    "6": 0.218,
+    "7": 8.107,
+    "8": 9.81,
+    "9": 1.512,
+    "10": 0.302,
+    "11": 0.421,
+    "12": 0.237
+  },
+  "monthly_local_rates_percent": {
+    "1": 1.396,
+    "2": 1.83,
+    "3": 1.228,
+    "4": 1.748,
+    "5": 1.427,
+    "6": 1.803,
+    "7": 7.807,
+    "8": 2.789,
+    "9": 0.204,
+    "10": 1.81,
+    "11": 2.528,
+    "12": 1.469
+  },
   "limitations": [
-    "The anomaly label is a statistical proxy rather than a verified equipment-fault label.",
-    "total_appliance is strongly related to household load and can dominate the model.",
-    "The timeline is reconstructed under a one-reading-per-minute assumption."
+    "Proxy high-load label is not a verified fault label.",
+    "One household limits external validity.",
+    "Rolling threshold adapts to seasonality but may not absorb long regime shifts immediately.",
+    "Timeline relies on one-reading-per-minute reconstruction."
   ]
 }

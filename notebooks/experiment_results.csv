@@ -1,0 +1,11 @@
+Experiment,Features,Label,F1,AUC,Precision,Recall,DecisionThreshold,Model,ValidationF1,TestF1,TestAUC,TestPrecision,TestRecall
+Baseline: majority normal,none,train-global 3 sigma,0.0,0.5,0.0,0.0,0.5,,,,,,
+Baseline: total_appliance threshold,total_appliance only,train-global 3 sigma,0.4866,0.9235,0.9479,0.3273,4.024333,,,,,,
+Global label + leaky features,8,,,,,,1.0,LogisticRegression,0.2259,0.3931,0.902,1.0,0.2446
+Global label + leaky features,8,,,,,,0.968852,LightGBM,0.2539,0.0,0.8747,0.0,0.0
+Global label + leakage removed,7,,,,,,0.944908,LogisticRegression,0.0235,0.0,0.5992,0.0,0.0
+Global label + leakage removed,7,,,,,,0.384509,LightGBM,0.0545,0.0,0.6981,0.0,0.0
+Primary: local 30-day label + leakage removed,7,,,,,,0.820844,LogisticRegression,0.0284,0.0,0.6974,0.0,0.0
+Primary: local 30-day label + leakage removed,7,,,,,,0.252072,RandomForest,0.0614,0.0752,0.6791,0.0537,0.1253
+Primary: local 30-day label + leakage removed,7,,,,,,0.830647,XGBoost,0.1105,0.0,0.7674,0.0,0.0
+Primary: local 30-day label + leakage removed,7,,,,,,0.692479,LightGBM,0.0653,0.0795,0.7525,0.06,0.1174

@@ -1,235 +1,53 @@
-# DAP391m - Smart Home Energy Anomaly Detection
+# DAP391m — Smart Home Energy Anomaly Detection
 
-This project analyzes Home C's energy and weather data, builds a proxy anomaly label, compares five models, and implements the Plotly Dash dashboard.
+This revision focuses on methodological validity rather than maximizing a misleading score. It corrects target leakage, seasonal label bias and missing baselines in the HomeC anomaly-detection pipeline.
 
-## Current corrected version
+## Core correction
 
-This version fixes the following critical technical errors from the previous version:
+The original proxy label was derived from `use [kW]`, while `total_appliance`—an additive component of `use [kW]`—was used as a model feature. The revised project now:
 
-- All minute power sums are correctly converted: `kWh = sum(kW) / 60`.
-- Preprocessing can be rerun multiple times without repeating the sum of `Kitchen`, `Furnace`, or `total_appliance`.
-- Scripts and dashboards directly read `data/HomeC_cleaned_final.zip`, eliminating the need for manual extraction.
-- The model uses chronological split instead of random split.
-- SMOTE is not used on the time series.
-- Final model is saved correctly with the evaluated model and decision threshold.
-- Dashboard provides all the features the model needs.
-- README, notebook, model artifacts, KPIs, and charts have been synchronized.
+- calculates the global threshold from train only;
+- includes majority and one-column `total_appliance` baselines;
+- compares leaky and leakage-free feature sets;
+- defines the primary label using the previous 30 days only;
+- excludes `total_appliance` from the deployable model;
+- preserves chronological 70/15/15 evaluation;
+- calibrates thresholds on validation only.
+- uses the same prior-30-day label for dashboard KPIs and anomaly alerts.
 
-## Project structure
+## Verified finding
 
-```text
-SIMC_2026/
-├── app/
-│   └── app.py
-├── data/
-│   ├── HomeC_cleaned_final.zip
-│   ├── kpi_summary.json
-│   ├── top5_appliances.csv
-│   └── weather_energy_correlation.csv
-├── notebooks/
-│   ├── model_pipeline.ipynb
-│   ├── best_model.pkl
-│   ├── feature_columns.pkl
-│   ├── feature_defaults.json
-│   ├── model_metadata.json
-│   └── model_comparison.csv
-├── report/
-│   ├── Day2_MemberB_Report.md
-│   ├── architecture.png
-│   ├── architecture.svg
-│   └── architecture_pipeline_mermaid_source.md
-├── src/
-│   ├── HomeC_preprocess.py
-│   └── train_model.py
-├── visualization/
-│   └── chart1...chart14.png
-├── requirements.txt
-└── README.md
-```
+The one-column `total_appliance` rule achieves test F1 **0.4866**, outperforming all machine-learning configurations in the rerun. Once that leakage channel is removed, F1 falls sharply. The project therefore presents leakage and seasonality diagnosis as its main research contribution.
 
-## Dataset facts
-
-| Item | Verified value |
-|---|---:|
-| Rows | 503,910 |
-| Columns after feature engineering | 40 |
-| Reconstructed period | 2016-01-01 00:00 to 2016-12-15 22:29 |
-| Sampling assumption | One reading per minute |
-| Total household energy | 7,214.00 kWh |
-| Average household power | 0.8590 kW |
-| Peak power | 14.7146 kW |
-| Proxy anomaly threshold | 4.0336 kW |
-| Proxy anomalies | 12,418 rows (2.46%) |
-| Total solar generation | 640.21 kWh |
-
-### Timestamp limitation
-
-The raw `time` counter increases by 1 per row even though the dataset represents one-minute measurements. Interpreting it directly as Unix seconds compresses the data to roughly six days. This project therefore reconstructs a one-minute timeline from the row order. Dates are suitable for relative time-series analysis under that assumption, but they are not treated as independently verified timestamps.
-
-## Correct energy units
-
-Each row contains average power in kW for one minute. Therefore:
-
-```text
-energy_kWh = sum(power_kW) * (1 / 60 hour)
-```
-
-Monthly values displayed in MWh use:
-
-```text
-energy_MWh = sum(power_kW) / 60 / 1000
-```
-
-Correct Top-5 appliance totals:
-
-| Appliance | Total energy | Share |
-|---|---:|---:|
-| Furnace | 1,981.96 kWh | 39.41% |
-| Home office | 682.69 kWh | 13.58% |
-| Fridge | 533.78 kWh | 10.62% |
-| Barn | 491.56 kWh | 9.78% |
-| Wine cellar | 353.88 kWh | 7.04% |
-
-## Installation
+## Rebuild
 
 ```bash
-python -m venv .venv
-```
-
-Windows PowerShell:
-
-```powershell
-.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-```
-
-macOS/Linux:
-
-```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-## Rebuild preprocessing and charts
-
-From the repository root:
-
-```bash
 python src/HomeC_preprocess.py
-```
-
-The script:
-
-1. reads `HomeC.csv`, `HomeC_cleaned_final.csv`, or the shipped ZIP.
-2. removes stale engineered columns before rebuilding them.
-3. reconstructs the one-minute timeline.
-4. cleans missing/duplicate/constant data.
-5. creates time, appliance-group and aggregate features.
-6. writes the cleaned dataset back to `HomeC_cleaned_final.zip`.
-7. regenerates KPI/CSV artifacts and all 14 charts.
-
-It is idempotent: rerunning it does not double-count grouped appliances.
-
-## Rebuild model artifacts
-
-```bash
 python src/train_model.py
 ```
 
-The corrected model workflow uses:
+`src/train_model.py` regenerates:
 
-- chronological split: 70% train, 15% validation, 15% test.
-- Logistic Regression, Random Forest, XGBoost, LightGBM and Isolation Forest.
-- no random train/test shuffling.
-- no SMOTE.
-- validation-based probability-threshold calibration.
-- final refit followed by one evaluation on the untouched test period.
+- `notebooks/experiment_results.csv`
+- `notebooks/model_comparison.csv`
+- `notebooks/model_metadata.json`
+- `notebooks/best_model.pkl`
+- `notebooks/feature_columns.pkl`
+- `notebooks/feature_defaults.json`
 
-### Deployable model features
+## Main files
 
-The saved model uses exactly eight features:
+- `src/train_model.py`: corrected experiments and artifact export.
+- `notebooks/model_pipeline.ipynb`: reproducibility notebook.
+- `report/SIMC_2026_revised_research_report.md`: updated research report.
+- `report/REVISION_CHECKLIST.md`: completion checklist.
+- `app/app.py`: dashboard using the exported model metadata.
 
-```text
-gen_kw
-total_appliance
-temperature
-humidity
-hour
-dayofweek
-month
-is_weekend
-```
+## Security
 
-`use [kW]` is excluded because it directly creates the proxy label.
-
-### Latest verified model result
-
-Selected model: **LightGBM**
-
-| Metric | Chronological test result |
-|---|---:|
-| F1 | 0.2912 |
-| ROC-AUC | 0.8987 |
-| Precision | 0.2648 |
-| Recall | 0.3235 |
-
-This score is lower than the old random-split result but is more credible because future records are never mixed into training.
-
-Full details are stored in:
-
-- `notebooks/model_comparison.csv` - validation comparison;
-- `notebooks/model_metadata.json` - test metrics, periods, threshold and limitations;
-- `notebooks/feature_defaults.json` - safe defaults used by the dashboard.
-
-## Run dashboard
-
-```bash
-python app/app.py
-```
-
-Open the local URL printed by Dash, normally `http://127.0.0.1:8050`.
-
-The dashboard reads the ZIP directly and includes:
-
-- KPI cards.
-- recent proxy-anomaly alerts.
-- corrected energy visualizations.
-- weather-energy plots.
-- a prediction form covering all model features.
-- calibrated anomaly score and decision threshold.
-- optional Gemini explanation when `GEMINI_API_KEY` is configured.
-
-Optional `.env` file:
-
-```env
-GEMINI_API_KEY=your_key_here
-```
-
-Without the key, the app uses a local rule-based explanation.
-
-## Research question findings
-
-### RQ1 - When are high-consumption anomalies most frequent?
-
-- 15:00 has the highest anomaly rate at approximately 6.75%.
-- July and August dominate, with anomaly rates of approximately 9.87% and 11.91%.
-- Monday has the highest day-of-week anomaly rate at approximately 3.79%.
-
-### RQ2 - Which appliances contribute most?
-
-- Furnace is the largest annual appliance group at 39.41% of measured appliance energy.
-- Furnace is also the largest appliance reading in 10,332 of the 12,418 proxy-anomaly rows.
-
-### RQ3 - How does weather relate to energy?
-
-- Daily weather variables have weak direct linear correlation with household use.
-- Solar generation has a moderate positive daily correlation with temperature (`r ≈ 0.356`).
-- Anomaly rows are warmer on average than normal rows, but this is descriptive association rather than proof of causality.
+No `.env` file or Gemini API key is included in the repository. Configure an optional key only in a local, untracked `.env` file.
 
 ## Limitations
 
-1. The target is a statistical high-load proxy, not a ground-truth equipment-fault label.
-2. `total_appliance` is closely related to household consumption and can dominate prediction.
-3. The reconstructed timeline depends on the one-reading-per-minute assumption.
-4. The model is evaluated on one household only.
-5. The final chronological test F1 shows meaningful temporal distribution shift. Further work should consider rolling validation, adaptive thresholds and verified labels.
+The label remains a statistical high-load proxy rather than a verified fault label. The data covers one household, the timeline is reconstructed under a one-reading-per-minute assumption, and the current weather/calendar features are insufficient for reliable anomaly deployment.

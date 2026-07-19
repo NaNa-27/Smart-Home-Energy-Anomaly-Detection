@@ -108,6 +108,58 @@ def to_time_period(hour: pd.Series) -> pd.Series:
     return pd.cut(hour, bins=[-1, 5, 11, 17, 23], labels=[0, 1, 2, 3]).astype("int8")
 
 
+def split_rates(labels: pd.Series, train_end: int, val_end: int) -> dict[str, float]:
+    return {
+        "train": round(float(labels.iloc[:train_end].mean()) * 100, 3),
+        "validation": round(float(labels.iloc[train_end:val_end].mean()) * 100, 3),
+        "test": round(float(labels.iloc[val_end:].mean()) * 100, 3),
+    }
+
+
+def monthly_rates(df: pd.DataFrame, labels: pd.Series) -> dict[str, float]:
+    grouped = pd.DataFrame({"month": df["datetime"].dt.month, "label": labels})
+    return {
+        str(int(month)): round(float(rate) * 100, 3)
+        for month, rate in grouped.groupby("month")["label"].mean().items()
+    }
+
+
+def build_anomaly_diagnostics(df: pd.DataFrame, target: str) -> dict[str, object]:
+    n_rows = len(df)
+    train_end = int(n_rows * 0.70)
+    val_end = int(n_rows * 0.85)
+    use = df[target].astype(float).reset_index(drop=True)
+    train = use.iloc[:train_end]
+
+    global_threshold = float(train.mean() + 3 * train.std())
+    global_label = (use > global_threshold).astype("int8")
+
+    indexed = df.set_index("datetime", drop=False)
+    prior_use = indexed[target].astype(float).shift(1)
+    rolling_mean = prior_use.rolling("30D", min_periods=1440).mean()
+    rolling_std = prior_use.rolling("30D", min_periods=1440).std()
+    local_threshold = (
+        rolling_mean.fillna(float(train.mean()))
+        + 3 * rolling_std.fillna(float(train.std()))
+    ).reset_index(drop=True)
+    local_label = (use > local_threshold).astype("int8")
+
+    return {
+        "train_end": train_end,
+        "val_end": val_end,
+        "global_threshold": global_threshold,
+        "global_label": global_label,
+        "local_threshold": local_threshold,
+        "local_label": local_label,
+        "split_rates": {
+            "global": split_rates(global_label, train_end, val_end),
+            "local_30d": split_rates(local_label, train_end, val_end),
+        },
+        "monthly_global_rates": monthly_rates(df, global_label),
+        "monthly_local_rates": monthly_rates(df, local_label),
+    }
+
+
 def main() -> None:
     section("STEP 1: LOAD AND NORMALIZE")
     df, source = read_input()
@@ -201,19 +253,26 @@ def main() -> None:
     print("Raw appliance circuits:", appliance_features)
     print("Grouped appliance columns:", grouped_appliance_cols)
 
-    section("STEP 4: ANOMALY LABEL FOR EDA")
+    section("STEP 4: ANOMALY LABEL DIAGNOSTICS")
     target = "use [kW]"
-    mu, sigma = df[target].mean(), df[target].std()
-    k_sigma = 3
-    threshold = float(mu + k_sigma * sigma)
-    df["_eda_anomaly"] = (df[target] > threshold).astype("int8")
+    anomaly = build_anomaly_diagnostics(df, target)
+    threshold = float(anomaly["global_threshold"])
+    local_threshold = anomaly["local_threshold"]
+    global_label = anomaly["global_label"]
+    local_label = anomaly["local_label"]
+    df["_eda_anomaly"] = local_label
     n_anomalies = int(df["_eda_anomaly"].sum())
     anomaly_rate = float(df["_eda_anomaly"].mean() * 100)
+    global_anomalies = int(global_label.sum())
+    global_anomaly_rate = float(global_label.mean() * 100)
     q1, q3 = df[target].quantile([0.25, 0.75])
     iqr = q3 - q1
     iqr_outliers = int(((df[target] < q1 - 1.5 * iqr) | (df[target] > q3 + 1.5 * iqr)).sum())
-    print(f"Threshold: {threshold:.4f} kW")
-    print(f"Proxy anomalies: {n_anomalies:,} ({anomaly_rate:.2f}%)")
+    print(f"Train-only global threshold: {threshold:.4f} kW")
+    print(f"Global-train anomalies: {global_anomalies:,} ({global_anomaly_rate:.2f}%)")
+    print(f"Local 30-day anomalies: {n_anomalies:,} ({anomaly_rate:.2f}%)")
+    print("Split anomaly rates (%):", anomaly["split_rates"])
+    print("Monthly local anomaly rates (%):", anomaly["monthly_local_rates"])
     print(f"IQR outliers: {iqr_outliers:,}")
 
     section("STEP 5: SAVE CLEANED DATASET")
@@ -300,13 +359,15 @@ def main() -> None:
 
     fig, ax = plt.subplots(figsize=(8.5, 5))
     ax.hist(df[target], bins=60, color=COLOR_ENERGY, edgecolor="white")
-    ax.axvline(threshold, color=COLOR_ANOMALY, linestyle="--", label=f"Threshold={threshold:.2f} kW")
+    ax.axvline(threshold, color=COLOR_ANOMALY, linestyle="--",
+               label=f"Train-only global threshold={threshold:.2f} kW")
     ax.set(title="Distribution of One-Minute Power Consumption", xlabel="Power (kW)", ylabel="Readings")
     ax.legend(); save_chart(fig, "chart2_histogram.png")
 
     fig, ax = plt.subplots(figsize=(8.5, 4.2))
     sns.boxplot(x=df[target], ax=ax, color=COLOR_ENERGY)
-    ax.axvline(threshold, color=COLOR_ANOMALY, linestyle="--", label=f"Threshold={threshold:.2f} kW")
+    ax.axvline(threshold, color=COLOR_ANOMALY, linestyle="--",
+               label=f"Train-only global threshold={threshold:.2f} kW")
     ax.set(title="Boxplot of Power Consumption", xlabel="Power (kW)"); ax.legend()
     save_chart(fig, "chart3_boxplot.png")
 
@@ -340,12 +401,14 @@ def main() -> None:
         save_chart(fig, "chart10_stacked_area_appliances.png")
 
     sample_df = df.iloc[::200]
+    sample_threshold = local_threshold.iloc[::200]
     fig, ax = plt.subplots(figsize=(14, 5.5))
     ax.plot(sample_df["datetime"], sample_df[target], color=COLOR_ENERGY, linewidth=0.8, label="Consumption")
+    ax.plot(sample_df["datetime"], sample_threshold, color=COLOR_MEDIUM, linestyle="--",
+            linewidth=1, label="Prior 30-day threshold")
     anomalies_sample = sample_df[sample_df["_eda_anomaly"] == 1]
     ax.scatter(anomalies_sample["datetime"], anomalies_sample[target], color=COLOR_ANOMALY, s=14, label="Anomaly")
-    ax.axhline(threshold, color=COLOR_ANOMALY, linestyle="--", linewidth=1, label=f"Threshold={threshold:.2f} kW")
-    ax.set(title=f"Proxy Anomaly Visualization - {n_anomalies:,} rows ({anomaly_rate:.2f}%)",
+    ax.set(title=f"Local 30-Day Anomaly Visualization - {n_anomalies:,} rows ({anomaly_rate:.2f}%)",
            xlabel="Date", ylabel="Power (kW)")
     ax.legend(); save_chart(fig, "chart12_anomaly_timeseries.png")
 
@@ -371,7 +434,16 @@ def main() -> None:
         "peak_consumption_time": str(df.loc[df["use [kW]"].idxmax(), "datetime"]),
         "number_of_anomalies": n_anomalies,
         "anomaly_rate_pct": round(anomaly_rate, 2),
+        "anomaly_label_definition": "use [kW] exceeds prior 30-day rolling mean + 3 rolling std; current row excluded",
         "anomaly_threshold_kw": round(threshold, 4),
+        "global_train_threshold_kw": round(threshold, 4),
+        "global_train_number_of_anomalies": global_anomalies,
+        "global_train_anomaly_rate_pct": round(global_anomaly_rate, 2),
+        "local_30d_number_of_anomalies": n_anomalies,
+        "local_30d_anomaly_rate_pct": round(anomaly_rate, 2),
+        "split_anomaly_rates_percent": anomaly["split_rates"],
+        "monthly_global_rates_percent": anomaly["monthly_global_rates"],
+        "monthly_local_rates_percent": anomaly["monthly_local_rates"],
         "total_solar_generation_kwh": round(float(df["gen [kW]"].sum() * SAMPLE_INTERVAL_HOURS), 2),
         "date_range_start": str(fixed_start),
         "date_range_end": str(fixed_end),
