@@ -1,19 +1,19 @@
-# DAP391m — Smart Home Energy Anomaly Detection
+# Smart Home Energy Anomaly Detection
 
 This revision focuses on methodological validity rather than maximizing a misleading score. It corrects target leakage, seasonal label bias and missing baselines in the HomeC anomaly-detection pipeline.
 
 ## Core correction
 
-The original proxy label was derived from `use [kW]`, while `total_appliance`—an additive component of `use [kW]`—was used as a model feature. The revised project now:
+The original proxy label was derived from `use [kW]`, while `total_appliance` - an additive component of `use [kW]` - was used as a model feature. The revised project now:
 
-- calculates the global threshold from train only;
-- includes majority and one-column `total_appliance` baselines;
-- compares leaky and leakage-free feature sets;
-- defines the primary label using the previous 30 days only;
-- excludes `total_appliance` from the deployable model;
-- preserves chronological 70/15/15 evaluation;
-- calibrates thresholds on validation only.
-- uses the same prior-30-day label for dashboard KPIs and anomaly alerts.
+- Calculates the global threshold from train only.
+- Includes majority and one-column `total_appliance` baselines.
+- Compares leaky and leakage-free feature sets.
+- Defines the primary label using the previous 30 days only.
+- Excludes `total_appliance` from the deployable model.
+- Preserves chronological 70/15/15 evaluation.
+- Calibrates thresholds on validation only.
+- Uses the same prior-30-day label for dashboard KPIs and anomaly alerts.
 
 ## Verified finding
 
@@ -43,10 +43,6 @@ python src/train_model.py
 - `report/SIMC_2026_revised_research_report.md`: updated research report.
 - `report/REVISION_CHECKLIST.md`: completion checklist.
 - `app/app.py`: dashboard using the exported model metadata.
-
-## Security
-
-No `.env` file or Gemini API key is included in the repository. Configure an optional key only in a local, untracked `.env` file.
 
 ## Limitations
 

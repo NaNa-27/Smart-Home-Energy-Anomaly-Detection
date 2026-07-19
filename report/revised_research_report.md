@@ -1,4 +1,4 @@
-# Smart Home Energy Anomaly Detection — Revised Research Report
+# Smart Home Energy Anomaly Detection: Revised Research Report
 
 ## 1. Revision objective
 
@@ -21,7 +21,7 @@ This revision addresses the methodological issues identified in the review file.
 
 `anomaly = use [kW] > mean(train use) + 3 × std(train use)`
 
-The resulting train threshold is **4.3952 kW**.
+The resulting train threshold is 4.3952 kW.
 
 ### 3.2 Local 30-day label
 
@@ -55,7 +55,7 @@ The global label is strongly seasonal. Its anomaly rate falls from 2.527% in tra
 | 11 | 0.421% | 2.528% |
 | 12 | 0.237% | 1.469% |
 
-July remains elevated under the local label. This indicates a sustained consumption regime that a 30-day window does not immediately absorb; it is a substantive finding rather than a preprocessing failure.
+July remains elevated under the local label. This indicates a sustained consumption regime that a 30-day window does not immediately absorb. It is a substantive finding rather than a preprocessing failure.
 
 ## 5. Required baselines and leakage experiments
 
@@ -75,7 +75,7 @@ July remains elevated under the local label. This indicates a sustained consumpt
 
 ## 6. Main findings
 
-The one-column `total_appliance` baseline achieves **test F1 = 0.4866**, which is higher than every machine-learning configuration in this rerun. This confirms that the original predictive performance was dominated by a feature that directly overlaps with the label-generating quantity.
+The one-column `total_appliance` baseline achieves test F1 = 0.4866, which is higher than every machine-learning configuration in this rerun. This confirms that the original predictive performance was dominated by a feature that directly overlaps with the label-generating quantity.
 
 After removing `total_appliance`, performance drops sharply. Under the train-only global label, the seven-feature models produce test F1 of 0.0000. Under the local 30-day label, Random Forest reaches test F1 0.0752 and LightGBM reaches 0.0795. The validation-selected XGBoost model has AUC 0.7674 on test but predicts no positives at the frozen validation threshold, giving F1 0.0000.
 
@@ -83,7 +83,7 @@ These results mean the current weather and calendar variables have limited opera
 
 ## 7. Selected deployable artifact
 
-The saved model is **XGBoost**, selected strictly by validation F1 under the local 30-day label and leakage-free feature set. Its test metrics are:
+The saved model is XGBoost, selected strictly by validation F1 under the local 30-day label and leakage-free feature set. Its test metrics are:
 
 | Metric | Value |
 |---|---:|
@@ -96,7 +96,7 @@ The poor thresholded test result is retained rather than replaced by a test-opti
 
 ## 8. Interpretation and implications
 
-The project should not describe `total_appliance` as merely “strongly related” to household load. It is an additive component of `use [kW]` and is therefore a direct leakage channel for this proxy label.
+The project should not describe `total_appliance` as merely "strongly related" to household load. It is an additive component of `use [kW]` and is therefore a direct leakage channel for this proxy label.
 
 The project should also avoid claiming that chronological splitting alone explains lower F1. The larger cause is label prevalence shift produced by a global threshold on seasonal consumption. The local rolling threshold improves the definition of anomaly, although it does not create strong predictive information in the remaining features.
 
