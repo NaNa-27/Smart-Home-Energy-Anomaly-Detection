@@ -40,7 +40,7 @@ python src/train_model.py
 
 - `src/train_model.py`: corrected experiments and artifact export.
 - `notebooks/model_pipeline.ipynb`: reproducibility notebook.
-- `report/SIMC_2026_revised_research_report.md`: updated research report.
+- `report/final-report/Report_HomeC.md`: updated research report.
 - `report/REVISION_CHECKLIST.md`: completion checklist.
 - `app/app.py`: dashboard using the exported model metadata.
 
