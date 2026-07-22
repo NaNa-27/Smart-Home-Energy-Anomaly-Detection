@@ -423,7 +423,7 @@ def main() -> None:
     ax.set(title="Average Power Consumption by Month", xlabel="Month", ylabel="Average power (kW)")
     save_chart(fig, "chart14_monthly_consumption.png")
 
-    section("STEP 8: KPI SUMMARY")
+    section("STEP 8 - KPI SUMMARY")
     kpi = {
         "sample_interval_minutes": SAMPLE_INTERVAL_MINUTES,
         "timeline_note": "Reconstructed at one-minute intervals because the raw time counter increments by 1.",

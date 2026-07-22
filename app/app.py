@@ -1,5 +1,5 @@
 # ==========================================================
-# Smart Home Anomaly Detection Dashboard
+# DAP391m - Smart Home Anomaly Detection Dashboard
 # Reads artifacts directly from <repo>/notebooks/ (no duplicate copies):
 #     best_model.pkl, feature_columns.pkl
 # Reads data directly from <repo>/data/HomeC_cleaned_final.zip.
@@ -63,7 +63,7 @@ APPLIANCE_COLORWAY = px.colors.qualitative.Set2
 
 # ---------- 1. Initialization ----------
 app = dash.Dash(__name__)
-app.title = "Smart Home Anomaly Detection"
+app.title = "DAP391m - Smart Home Anomaly Detection"
 
 # ---------- 2. Dashboard data ----------
 data_status = ""
@@ -441,7 +441,7 @@ def chart_card(fig, width="50%"):
 
 
 app.layout = html.Div([
-    html.H1("Smart Home Anomaly Detection Dashboard",
+    html.H1("DAP391m - Smart Home Anomaly Detection Dashboard",
             style={"textAlign": "center"}),
     html.P(model_status, style={"textAlign": "center",
                                 "color": "green" if model is not None else "darkorange"}),

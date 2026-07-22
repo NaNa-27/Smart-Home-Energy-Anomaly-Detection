@@ -1,9 +1,9 @@
 {
   "selected_model": "XGBoost",
-  "decision_threshold": 0.83064663,
+  "decision_threshold": 0.83179164,
   "test_metrics": {
     "F1": 0.0,
-    "AUC": 0.7674,
+    "AUC": 0.7771,
     "Precision": 0.0,
     "Recall": 0.0
   },

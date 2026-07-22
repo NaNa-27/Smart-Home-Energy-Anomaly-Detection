@@ -43,6 +43,8 @@ def metrics(y,score,thr):
 
 def score_model(m,X):
     if hasattr(m,'predict_proba'): return m.predict_proba(X)[:,1]
+    # IsolationForest uses lower decision scores for more abnormal points.
+    if isinstance(m,IsolationForest): return -m.decision_function(X)
     if hasattr(m,'decision_function'): return m.decision_function(X)
     raise TypeError('Model has no score method')
 
@@ -112,11 +114,13 @@ def main():
     rows.extend(r1+r2)
 
     pos=float(local_y.iloc[:train_end:3].sum()); neg=len(local_y.iloc[:train_end:3])-pos; pw=neg/max(pos,1)
+    contamination=max(min(pos/max(pos+neg,1),.1),.001)
     full={
       'LogisticRegression':compact['LogisticRegression'],
       'RandomForest':RandomForestClassifier(n_estimators=30,max_depth=14,class_weight='balanced_subsample',n_jobs=-1,random_state=42),
       'XGBoost':XGBClassifier(n_estimators=40,max_depth=4,learning_rate=.08,subsample=.85,colsample_bytree=.9,scale_pos_weight=pw,tree_method='hist',eval_metric='logloss',n_jobs=4,random_state=42),
       'LightGBM':compact['LightGBM'],
+      'IsolationForest':IsolationForest(n_estimators=80,contamination=contamination,n_jobs=-1,random_state=42),
     }
     r3,fitted=fit_experiment('Primary: local 30-day label + leakage removed',CLEAN_SOURCE,local_y,df,train_end,val_end,full)
     rows.extend(r3)
